@@ -1,20 +1,20 @@
 main {
-  max-width: 880px;
+  max-width: 800px;
   margin: auto;
   padding: 1.2rem;
 }
 
 /* ===== 見出し ===== */
 h2 {
-  font-size: 18px;
+  font-size: 1.3rem;
   margin: 1rem 0 0.5rem;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 4px;
+  padding: 0 1rem 0.5rem;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .title-actions {
@@ -25,64 +25,121 @@ h2 {
 .card {
   background: white;
   border-radius: 8px;
-  padding: 1rem 1.2rem;
+  padding: 1rem 2rem;
   margin-bottom: 1.2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
 }
 
-/* ===== フォーム行 ===== */
-.form-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.8rem;
-  gap: 8px;
+/* ===== テーブル型フォーム ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
 }
 
-.form-row label {
-  flex: 0 0 150px;
+th {
+  width: 25%;
+  text-align: left;
   font-weight: 600;
-  font-size: 14px;
-  text-align: right;
+  background: #f9fafb;
+  padding: 1.2rem;
 }
 
-.form-row input,
-.form-row select,
-.form-row textarea {
-  flex: 1;
+td {
+  height: 60px;
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+tr:not(:last-child) td,
+th {
+  border-bottom: 1px solid #eaeef5;
+}
+
+td:has(label) {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.meeting-card table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.meeting-card th {
+  height: 50px;
+  padding: 8px;
+  border: 1px solid #eaeef5;
+}
+
+.meeting-card td {
+  border: 1px solid #eaeef5;
+}
+
+.meeting-card th:first-child{
+  width: 14%;
+}
+
+.meeting-card th:nth-child(2) {
+  width: 28%;
+}
+
+
+.meeting-card th:nth-child(3) {
+  width: 16%;
+}
+
+.meeting-card th:nth-child(4) {
+  width: 28%;
+}
+
+.meeting-card th:nth-child(5),
+.meeting-card th:nth-child(6) {
+  width: 7%;
+}
+
+.meeting-card td:nth-child(5),
+.meeting-card td:nth-child(6) {
+  text-align: center;
+}
+
+
+/* ===== 入力幅調整 ===== */
+label:has(input[type="radio"]) {
+  cursor: pointer;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="number"],
+input[type="tel"] {
+  width: 15rem;
   padding: 0.4rem;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 1rem;
   transition: all .2s;
 }
 
-.form-row input:focus,
-.form-row select:focus,
-.form-row textarea:focus {
+input[type="text"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: all .2s;
+}
+
+input:not([type="radio"]):focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
-}
-
-.inline-unit {
-  display: flex;
-  align-items: center;
-}
-
-.inline-unit span {
-  margin-left: 4px;
-  font-size: 13px;
-  color: #555;
-}
-
-.radio-group label {
-  margin-right: 1rem;
-  font-weight: 400;
-}
-
-input[type="radio"]:focus {
-  outline: none;
-  box-shadow: none;
+  box-shadow: 0 0 0 1px rgba(77, 181, 255, 0.2);
 }
 
 /* ===== ボタン ===== */
@@ -90,10 +147,10 @@ input[type="radio"]:focus {
   background: #2563eb;
   color: white;
   border: none;
-  padding: 6px 12px;
+  padding: 0.5rem 1.5rem;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 1rem;
   transition: background 0.2s;
 }
 
@@ -120,7 +177,6 @@ input[type="radio"]:focus {
   color: #dc2626;
   border: none;
   cursor: pointer;
-  font-size: 14px;
 }
 
 .btn-del:hover {
@@ -141,9 +197,6 @@ input[type="radio"]:focus {
 
 .register-btn {
   background: #16a34a;
-  font-size: 16px;
-  padding: 10px 20px;
-  border-radius: 6px;
 }
 
 .register-btn:hover {
@@ -159,7 +212,7 @@ input[type="radio"]:focus {
 .modal-bg {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +226,7 @@ input[type="radio"]:focus {
   padding: 1rem 1.5rem;
   width: 95%;
   max-width: 460px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .modal-actions {
@@ -190,32 +243,35 @@ input[type="radio"]:focus {
   color: #555;
 }
 
-/* ===== テーブル ===== */
-table {
+.modal-box label {
+  display: block;
+  margin-top: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
+.modal-box input,
+.modal-box textarea,
+.modal-box select {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 0.5rem;
+  padding: 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
-th, td {
-  padding: 0.5rem;
-  text-align: center;
-}
-
-th {
-  background: #f1f5f9;
-  font-weight: 600;
-}
-
-tr:not(:last-child) td {
-  border-bottom: 1px solid #e2e8f0;
+.modal-box input:focus,
+.modal-box textarea:focus,
+.modal-box select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
 }
 
 .total {
   font-weight: bold;
-  font-size: 15px;
   margin-top: 0.3rem;
   color: #333;
+  text-align: center;
 }
 
 /* ===== 表示リスト ===== */
@@ -227,17 +283,40 @@ tr:not(:last-child) td {
   float: right;
 }
 
-/* ===== 入力幅調整 ===== */
-input[type="date"] {
-  width: 140px;
-}
-input[type="time"],
-input[type="datetime-local"] {
-  width: 160px;
+
+/* ===== トグルボタン ===== */
+.toggle-btn {
+  min-width: 70px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  transition: background 0.2s, color 0.2s;
 }
 
-.weekday {
-  font-size: 13px;
-  color: #555;
-  margin-left: 6px;
+.toggle-btn.inactive {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.toggle-btn.active-yes {
+  background: #16a34a;
+  /* 緑 */
+  color: white;
+}
+
+.toggle-btn.active-no {
+  background: #dc2626;
+  /* 赤 */
+  color: white;
+}
+
+.toggle-btn:hover {
+  opacity: 0.9;
 }
