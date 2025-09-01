@@ -1,0 +1,243 @@
+main {
+  max-width: 880px;
+  margin: auto;
+  padding: 1.2rem;
+}
+
+/* ===== 見出し ===== */
+h2 {
+  font-size: 18px;
+  margin: 1rem 0 0.5rem;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.title-actions {
+  margin-left: auto;
+}
+
+/* ===== カード ===== */
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ===== フォーム行 ===== */
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  gap: 8px;
+}
+
+.form-row label {
+  flex: 0 0 150px;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: right;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  flex: 1;
+  padding: 0.4rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all .2s;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+.inline-unit {
+  display: flex;
+  align-items: center;
+}
+
+.inline-unit span {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+.radio-group label {
+  margin-right: 1rem;
+  font-weight: 400;
+}
+
+input[type="radio"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ===== ボタン ===== */
+.btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background: #1d4ed8;
+}
+
+.btn-border {
+  background: none;
+  padding: 4px 10px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-border:hover {
+  background: #f9f9f9;
+}
+
+.btn-del {
+  background: none;
+  color: #dc2626;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-del:hover {
+  color: #b91c1c;
+}
+
+.btn-edit {
+  background: none;
+  color: #0ea5e9;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-edit:hover {
+  color: #0369a1;
+}
+
+.register-btn {
+  background: #16a34a;
+  font-size: 16px;
+  padding: 10px 20px;
+  border-radius: 6px;
+}
+
+.register-btn:hover {
+  background: #15803d;
+}
+
+.actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* ===== モーダル ===== */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-box {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  width: 95%;
+  max-width: 460px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.modal-actions {
+  text-align: center;
+  margin-top: 0.8rem;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  cursor: pointer;
+  font-size: 22px;
+  color: #555;
+}
+
+/* ===== テーブル ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+th, td {
+  padding: 0.5rem;
+  text-align: center;
+}
+
+th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+
+tr:not(:last-child) td {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.total {
+  font-weight: bold;
+  font-size: 15px;
+  margin-top: 0.3rem;
+  color: #333;
+}
+
+/* ===== 表示リスト ===== */
+.meeting-entry {
+  margin-bottom: 0.8rem;
+}
+
+.entry-actions {
+  float: right;
+}
+
+/* ===== 入力幅調整 ===== */
+input[type="date"] {
+  width: 140px;
+}
+input[type="time"],
+input[type="datetime-local"] {
+  width: 160px;
+}
+
+.weekday {
+  font-size: 13px;
+  color: #555;
+  margin-left: 6px;
+}
