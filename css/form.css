@@ -182,13 +182,6 @@ textarea:focus {
   background: #1d4ed8;
 }
 
-.swap-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 50%;
-}
-
 .btn-del {
   background: none;
   color: #dc2626;
