@@ -109,7 +109,7 @@ th {
 }
 
 .estimate-card th,
-.estimate-card td:not(:first-child){
+.estimate-card td:not(:first-child) {
   text-align: center;
 }
 
@@ -182,18 +182,11 @@ textarea:focus {
   background: #1d4ed8;
 }
 
-.btn-border {
-  background: none;
-  padding: 4px 10px;
-  border: 1px solid #333;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-border:hover {
-  background: #f9f9f9;
+.swap-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
 }
 
 .btn-del {
@@ -292,7 +285,6 @@ textarea:focus {
 }
 
 .total {
-  font-weight: bold;
   margin-top: 0.3rem;
   color: #333;
   text-align: center;
@@ -371,5 +363,28 @@ textarea:focus {
 }
 
 .toggle-check i {
+  cursor: pointer;
+}
+
+/* 項目カラムのセル全体を中央寄せ */
+.estimate-card table td:first-child {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* セルの中の input / select も中央寄せ */
+.estimate-card table td:first-child input,
+.estimate-card table td:first-child select {
+  display: inline-block;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.clickable-cell label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
 }

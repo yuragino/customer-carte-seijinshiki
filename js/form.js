@@ -57,10 +57,10 @@ document.addEventListener('alpine:init', () => {
       },
       // 当日スケジュール
       toujitsu: {
-        kitsukeStart: '',
-        kitsukeEnd: '',
-        hairMakeStart: '',
-        hairMakeEnd: '',
+        schedule: [
+          { id: 1, type: 'hair', start: '', end: '' },
+          { id: 2, type: 'kitsuke', start: '', end: '' }
+        ],
         note: ''
       },
       meetings: [],
@@ -152,7 +152,7 @@ document.addEventListener('alpine:init', () => {
     ],
 
     addOption() {
-      this.estimateItems.push({ name: "", fixed: false, toujitsu: false, maedori: false, price: 0 });
+      this.estimateItems.push({ name: "", fixed: false, toujitsu: false, maedori: false, price: null });
     },
 
     calcPrice(item) {
@@ -204,8 +204,17 @@ document.addEventListener('alpine:init', () => {
     },
 
     formatYen(value) {
-      if (!value || isNaN(value)) return "0円";
+      if (!value || isNaN(value)) return "—";  // 0円のとき「—」に
       return value.toLocaleString('ja-JP') + "円";
+    },
+    
+    swapSchedule() {
+      const arr = this.formData.toujitsu.schedule;
+      if (arr.length === 2) {
+        [arr[0], arr[1]] = [arr[1], arr[0]];
+        // 念のため再代入で反映保証
+        this.formData.toujitsu.schedule = [...arr];
+      }
     }
 
   }))
