@@ -1,3 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBOMtAoCObyoalTk6_nVpGlsnLcGSw4Jzc",
+  authDomain: "kimono-coordinate.firebaseapp.com",
+  databaseURL: "https://kimono-coordinate-default-rtdb.firebaseio.com",
+  projectId: "kimono-coordinate",
+  storageBucket: "kimono-coordinate.firebasestorage.app",
+  messagingSenderId: "399031825104",
+  appId: "1:399031825104:web:5ea4da3fb129cf935724d5",
+  measurementId: "G-VVTT0QVXQQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 // ===== 定数定義 =====
 const PRICE = {
   FURISODE: {
@@ -37,7 +53,15 @@ document.addEventListener('alpine:init', () => {
         outfit: '振袖',          // "振袖" or "袴"
         rentalType: '自前',      // "自前" / "レンタル" / "一部レンタル"
         outfitMemo: '',      // 備考
-        hmStaff: ''          // 振袖のときだけ利用
+        hairMakeStaff: ''          // 振袖のときだけ利用
+      },
+      // 当日スケジュール
+      toujitsu: {
+        kitsukeStart: '',
+        kitsukeEnd: '',
+        hairMakeStart: '',
+        hairMakeEnd: '',
+        note: ''
       },
       meetings: [],
       maedoriStatus: 'あり',

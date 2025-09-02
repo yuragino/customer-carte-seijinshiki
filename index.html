@@ -26,7 +26,7 @@
             <option :value="year" x-text="year" :selected="year === selectedYear"></option>
           </template>
         </select>
-        <span>花火大会</span>
+        <span>成人式</span>
       </div>
       <nav class="header-nav">
         <a :href="`./image-carte.html?year=${selectedYear}`">画像一覧</a>
@@ -102,11 +102,41 @@
         </tr>
         <tr x-show="formData.basic.outfit === '振袖'">
           <th>ヘアメイク担当</th>
-          <td><input type="text" x-model="formData.basic.hmStaff"></td>
+          <td><input type="text" x-model="formData.basic.hairMakeStaff"></td>
         </tr>
         <tr x-show="formData.basic.outfit">
           <th>備考</th>
           <td><textarea rows="2" x-model="formData.basic.outfitMemo"></textarea></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 当日スケジュール -->
+    <div class="card toujitsu-card">
+      <h2>
+        <i class="fa-regular fa-calendar-check"></i>
+        <span>当日スケジュール</span>
+      </h2>
+      <table>
+        <tr>
+          <th>着付け時間</th>
+          <td>
+            <input type="time" x-model="formData.toujitsu.kitsukeStart"> 〜
+            <input type="time" x-model="formData.toujitsu.kitsukeEnd">
+          </td>
+        </tr>
+        <tr x-show="formData.basic.outfit === '振袖'">
+          <th>ヘアメイク時間</th>
+          <td>
+            <input type="time" x-model="formData.toujitsu.hairMakeStart"> 〜
+            <input type="time" x-model="formData.toujitsu.hairMakeEnd">
+          </td>
+        </tr>
+        <tr>
+          <th>備考</th>
+          <td>
+            <textarea x-model="formData.toujitsu.note" rows="2"></textarea>
+          </td>
         </tr>
       </table>
     </div>
