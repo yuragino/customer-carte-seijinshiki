@@ -133,10 +133,10 @@
             </tr>
           </template>
         </template>
-        <!-- 袴モード: 着付けだけ -->
+        <!-- 袴モード: 着付だけ -->
         <template x-if="formData.basic.outfit === '袴'">
           <tr>
-            <th>着付け時間</th>
+            <th>着付時間</th>
             <td>
               <input type="time" x-model="formData.toujitsu.schedule.find(t => t.type === 'kitsuke').start"> 〜
               <input type="time" x-model="formData.toujitsu.schedule.find(t => t.type === 'kitsuke').end">
