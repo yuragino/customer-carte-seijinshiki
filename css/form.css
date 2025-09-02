@@ -57,28 +57,31 @@ th {
   border-bottom: 1px solid #eaeef5;
 }
 
-td:has(label) {
+.radio-group {
   display: flex;
   gap: 1rem;
   align-items: center;
 }
 
+.estimate-card table,
 .meeting-card table {
   table-layout: fixed;
   width: 100%;
 }
 
+.estimate-card th,
 .meeting-card th {
   height: 50px;
   padding: 8px;
   border: 1px solid #eaeef5;
 }
 
+.estimate-card td,
 .meeting-card td {
   border: 1px solid #eaeef5;
 }
 
-.meeting-card th:first-child{
+.meeting-card th:first-child {
   width: 14%;
 }
 
@@ -105,6 +108,27 @@ td:has(label) {
   text-align: center;
 }
 
+.estimate-card th,
+.estimate-card td:not(:first-child){
+  text-align: center;
+}
+
+.estimate-card th:first-child {
+  width: 35%;
+}
+
+.estimate-card th:nth-child(2),
+.estimate-card th:nth-child(3) {
+  width: 10%;
+}
+
+.estimate-card th:nth-child(4) {
+  width: 35%;
+}
+
+.estimate-card th:nth-child(5) {
+  width: 10%;
+}
 
 /* ===== 入力幅調整 ===== */
 label:has(input[type="radio"]) {
@@ -319,4 +343,33 @@ textarea:focus {
 
 .toggle-btn:hover {
   opacity: 0.9;
+}
+
+/* ===== トグルチェックボックス ===== */
+.toggle-check input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-check i.fa-circle-check {
+  display: none;
+  color: #16a34a;
+  font-size: 1.4rem;
+}
+
+.toggle-check i.fa-circle-xmark {
+  display: inline;
+  color: #9ca3af;
+  font-size: 1.4rem;
+}
+
+.toggle-check input:checked~i.fa-circle-xmark {
+  display: none;
+}
+
+.toggle-check input:checked~i.fa-circle-check {
+  display: inline;
+}
+
+.toggle-check i {
+  cursor: pointer;
 }

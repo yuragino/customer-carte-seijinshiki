@@ -1,3 +1,18 @@
+// ===== 定数定義 =====
+const PRICE = {
+  FURISODE: {
+    KITSUKE: {
+      MAEDORI: 13200,
+      TOUJITSU: 16500,
+      BOTH: 25300,
+    },
+    HAIR_MAKE: 10000,
+    HAIR_ONLY: 6000,
+  },
+  HAKAMA: {
+    KITSUKE: 8500
+  }
+};
 document.addEventListener('alpine:init', () => {
   Alpine.data('app', () => ({
     // --- ヘッダー関連 ---
@@ -60,7 +75,9 @@ document.addEventListener('alpine:init', () => {
       this.meetingModalVisible = true;
     },
     deleteMeeting(index) {
-      this.formData.meetings.splice(index, 1);
+      if (confirm('この項目を削除しますか？')) {
+        this.formData.meetings.splice(index, 1);
+      }
     },
     get sortedMeetings() {
       return [...this.formData.meetings].sort((a, b) => {
@@ -106,30 +123,42 @@ document.addEventListener('alpine:init', () => {
 
     // ===== 見積もり =====
     estimateItems: [
-      { name: "着付け", fixed: true, toujitsu: false, maedori: false },
-      { name: "ヘア・メイク", fixed: true, toujitsu: false, maedori: false }
+      { name: "着付け", fixed: true, toujitsu: false, maedori: false }, // index0
+      { name: "ヘア", fixed: true, toujitsu: false, maedori: false, option: "none" } // index1
     ],
+
     addOption() {
       this.estimateItems.push({ name: "", fixed: false, toujitsu: false, maedori: false, price: 0 });
     },
+
     calcPrice(item) {
+      // 着付け
       if (item.name === "着付け") {
-        if (item.toujitsu && item.maedori) return 10000;
-        if (item.toujitsu) return 8000;
-        if (item.maedori) return 6000;
+        if (this.formData.basic.outfit === "振袖") {
+          if (item.toujitsu && item.maedori) return PRICE.FURISODE.KITSUKE.BOTH;
+          if (item.toujitsu) return PRICE.FURISODE.KITSUKE.TOUJITSU;
+          if (item.maedori) return PRICE.FURISODE.KITSUKE.MAEDORI;
+        } else if (this.formData.basic.outfit === "袴") {
+          return PRICE.HAKAMA.KITSUKE;
+        }
       }
-      if (item.name === "ヘア・メイク") {
-        if (item.toujitsu && item.maedori) return 4000;
-        if (item.toujitsu) return 3000;
-        if (item.maedori) return 2000;
+
+      // ヘア (振袖のみ)
+      if (item.name === "ヘア" && this.formData.basic.outfit === "振袖") {
+        let unitPrice = 0;
+        if (item.option === "hairMake") unitPrice = PRICE.FURISODE.HAIR_MAKE;
+        if (item.option === "hairOnly") unitPrice = PRICE.FURISODE.HAIR_ONLY;
+        let total = 0;
+        if (item.toujitsu) total += unitPrice;
+        if (item.maedori) total += unitPrice;
+        return total;
       }
-      return 0;
+
+      return item.price ?? 0;
     },
+
     get totalAmount() {
-      return this.estimateItems.reduce((sum, it) => {
-        if (it.fixed) return sum + this.calcPrice(it);
-        return sum + (it.price || 0);
-      }, 0);
+      return this.estimateItems.reduce((sum, it) => sum + this.calcPrice(it), 0);
     },
 
     // ===== 共通ユーティリティ =====
@@ -148,6 +177,12 @@ document.addEventListener('alpine:init', () => {
         "(" + this.getWeekday(dateStr) + ")" +
         String(dt.getHours()).padStart(2, "0") + ":" +
         String(dt.getMinutes()).padStart(2, "0");
+    },
+
+    formatYen(value) {
+      if (!value || isNaN(value)) return "0円";
+      return value.toLocaleString('ja-JP') + "円";
     }
+
   }))
 });

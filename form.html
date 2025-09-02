@@ -65,7 +65,7 @@
         </tr>
         <tr>
           <th>LINE</th>
-          <td>
+          <td class="radio-group">
             <label><input type="radio" value="教室LINE" x-model="formData.basic.lineType"> 教室LINE</label>
             <label><input type="radio" value="椿LINE" x-model="formData.basic.lineType"> 椿LINE</label>
             <label><input type="radio" value="お客様LINE" x-model="formData.basic.lineType"> お客様LINE</label>
@@ -94,7 +94,7 @@
         </tr>
         <tr x-show="formData.basic.outfit">
           <th>利用形態</th>
-          <td>
+          <td class="radio-group">
             <label><input type="radio" value="自前" x-model="formData.basic.rentalType"> 自前</label>
             <label><input type="radio" value="レンタル" x-model="formData.basic.rentalType"> レンタル</label>
             <label><input type="radio" value="一部レンタル" x-model="formData.basic.rentalType"> 一部レンタル</label>
@@ -128,8 +128,8 @@
             <th>日時</th>
             <th>場所</th>
             <th>備考</th>
-            <th>編集</th>
-            <th>削除</th>
+            <th></th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -265,8 +265,23 @@
       </table>
     </div>
 
+    <!-- メディア -->
+    <div class="card media-card">
+      <h2><i class="fa-regular fa-images"></i> メディアアップロード</h2>
+      <table>
+        <tr>
+          <th>画像</th>
+          <td><input type="file" multiple accept="image/*"></td>
+        </tr>
+        <tr>
+          <th>動画</th>
+          <td><input type="file" multiple accept="video/*"></td>
+        </tr>
+      </table>
+    </div>
+
     <!-- 見積もり -->
-    <div class="card">
+    <div class="card estimate-card">
       <h2>
         <i class="fa-solid fa-yen-sign"></i> 見積もり
         <button class="btn title-actions" @click="addOption()">
@@ -274,10 +289,6 @@
           <span>オプション追加</span>
         </button>
       </h2>
-      <div>
-        <label>領収日</label>
-        <input type="date" x-model="formData.estimate.receiptDate">
-      </div>
       <table>
         <tr>
           <th>項目</th>
@@ -286,34 +297,106 @@
           <th>金額</th>
           <th></th>
         </tr>
-        <template x-for="(item,i) in estimateItems" :key="i">
+
+        <!-- 着付け固定項目 -->
+        <tr>
+          <td>着付け</td>
+          <td>
+            <label class="toggle-check">
+              <input type="checkbox" x-model="estimateItems[0].toujitsu">
+              <i class="fa-regular fa-circle-xmark"></i>
+              <i class="fa-regular fa-circle-check"></i>
+            </label>
+          </td>
+          <td>
+            <label class="toggle-check">
+              <input type="checkbox" x-model="estimateItems[0].maedori">
+              <i class="fa-regular fa-circle-xmark"></i>
+              <i class="fa-regular fa-circle-check"></i>
+            </label>
+          </td>
+          <td>
+            <!-- カンマ付き円表示 -->
+            <div class="total" x-text="formatYen(calcPrice(estimateItems[0]))"></div>
+          </td>
+          <td></td>
+        </tr>
+
+        <!-- ヘア項目（振袖のときだけ） -->
+        <tr x-show="formData.basic.outfit==='振袖'">
+          <td>
+            <select x-model="estimateItems[1].option">
+              <option value="none">ヘアメイクなし</option>
+              <option value="hairMake">ヘア＆メイク</option>
+              <option value="hairOnly">ヘアのみ</option>
+            </select>
+          </td>
+          <td>
+            <label class="toggle-check">
+              <input type="checkbox" x-model="estimateItems[1].toujitsu">
+              <i class="fa-regular fa-circle-xmark"></i>
+              <i class="fa-regular fa-circle-check"></i>
+            </label>
+          </td>
+          <td>
+            <label class="toggle-check">
+              <input type="checkbox" x-model="estimateItems[1].maedori">
+              <i class="fa-regular fa-circle-xmark"></i>
+              <i class="fa-regular fa-circle-check"></i>
+            </label>
+          </td>
+          <td>
+            <div class="total" x-text="formatYen(calcPrice(estimateItems[1]))"></div>
+          </td>
+          <td></td>
+        </tr>
+
+        <!-- 追加オプション -->
+        <template x-for="(item,i) in estimateItems.slice(2)" :key="i">
           <tr>
+            <td><input type="text" x-model="item.name"></td>
             <td>
-              <template x-if="item.fixed"><span x-text="item.name"></span></template>
-              <template x-if="!item.fixed"><input type="text" x-model="item.name"></template>
-            </td>
-            <td><input type="checkbox" x-model="item.toujitsu"></td>
-            <td><input type="checkbox" x-model="item.maedori"></td>
-            <td>
-              <template x-if="item.fixed">
-                <div class="total"><span x-text="calcPrice(item)"></span></div>
-              </template>
-              <template x-if="!item.fixed">
-                <input type="number" x-model.number="item.price">
-              </template>
+              <label class="toggle-check">
+                <input type="checkbox" x-model="item.toujitsu">
+                <i class="fa-regular fa-circle-xmark"></i>
+                <i class="fa-regular fa-circle-check"></i>
+              </label>
             </td>
             <td>
-              <button class="btn-del" x-show="!item.fixed" @click="estimateItems.splice(i,1)">
+              <label class="toggle-check">
+                <input type="checkbox" x-model="item.maedori">
+                <i class="fa-regular fa-circle-xmark"></i>
+                <i class="fa-regular fa-circle-check"></i>
+              </label>
+            </td>
+            <td>
+              <input type="number" x-model.number="item.price" style="width:80px; text-align:right;">
+              <span>円</span>
+            </td>
+            <td>
+              <button class="btn-del" @click="if(confirm('このオプションを削除しますか？')) estimateItems.splice(i+2,1)">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </td>
           </tr>
         </template>
+        <!-- 合計 -->
         <tr>
-          <td>合計</td>
+          <td colspan="3" style="text-align: center; font-weight: bold;">合計</td>
+          <td class="total" x-text="formatYen(totalAmount)"></td>
           <td></td>
-          <td></td>
-          <td x-text="totalAmount" class="total"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card receipt-card">
+      <h2><i class="fa-solid fa-receipt"></i> 領収情報</h2>
+      <table>
+        <tr>
+          <th>領収日</th>
+          <td>
+            <input id="receiptDate" type="date" x-model="formData.estimate.receiptDate" required>
+          </td>
         </tr>
       </table>
     </div>
