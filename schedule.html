@@ -72,7 +72,7 @@
             <td x-text="formatTimestamp(customer.statusTimestamps?.receptionCompletedAt)"></td>
 
             <td>
-              <span :class="customer.basic?.outfit === '振袖' ? 'outfit-furisode' : 'outfit-hakama'"
+              <span :class="customer.basic?.outfit === '振袖' ? 'gender-female' : 'gender-male'"
                 x-text="customer.basic?.name || '名前なし'"></span>
             </td>
 
