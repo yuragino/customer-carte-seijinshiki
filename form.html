@@ -322,7 +322,14 @@
         <table>
           <tr>
             <th>画像</th>
-            <td><input type="file" multiple accept="image/*"></td>
+            <td>
+              <input type="file" multiple accept="image/*" @change="handleImageUpload($event, index)">
+              <div class="preview-container">
+                <template x-for="src in customer.imagePreviews" :key="src">
+                  <img :src="src" class="preview-image">
+                </template>
+              </div>
+            </td>
           </tr>
           <tr>
             <th>動画</th>

@@ -381,3 +381,56 @@ textarea:focus {
   height: 100%;
   cursor: pointer;
 }
+
+/* 画像プレビュー */
+.preview-container {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.preview-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* --- キャンセル機能のスタイル --- */
+.cancellation-status {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    padding: 15px;
+    background-color: #ffebeb;
+    border: 1px solid #ffcccc;
+    border-radius: 8px;
+    text-align: center;
+    color: #dc3545;
+}
+
+.cancellation-status label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.delete-container {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.delete-container .delete-btn {
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    padding: 8px 20px;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+}
+
+.delete-container .delete-btn:hover {
+    background: #dc3545;
+    color: #fff;
+}

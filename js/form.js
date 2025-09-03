@@ -38,6 +38,11 @@ document.addEventListener('alpine:init', () => {
       return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
     },
 
+    CLOUDINARY_CONFIG: {
+      CLOUD_NAME: 'dxq1xqypx',
+      UPLOAD_PRESET: 'unsigned_preset',
+    },
+
     // DB登録に必要な内容まとめ
     formData: {
       basic: {
@@ -50,9 +55,9 @@ document.addEventListener('alpine:init', () => {
         lineType: '教室LINE',
         height: '',
         footSize: '',
-        outfit: '振袖', 
+        outfit: '振袖',
         rentalType: '自前',
-        outfitMemo: '', 
+        outfitMemo: '',
         hairMakeStaff: ''
       },
       // 当日スケジュール
@@ -63,6 +68,8 @@ document.addEventListener('alpine:init', () => {
         ],
         note: ''
       },
+      imagePreviews: [], // 画面表示用のプレビューURL
+      imageFiles: [],    // アップロード用のFileオブジェクト
       meetings: [],
       maedoriStatus: 'あり',
       maedori: null,
@@ -87,6 +94,21 @@ document.addEventListener('alpine:init', () => {
       } else {
         // 新規登録モード：初期データを設定
         this.updateCustomerList();
+      }
+    },
+
+    async loadFormData(groupId) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('year', this.selectedYear);
+      window.history.pushState({}, '', url);
+      try {
+        const collectionName = `${this.selectedYear}_seijinshiki`;
+        const docRef = doc(db, collectionName, groupId);
+        const docSnap = await getDoc(docRef);
+
+      } catch (error) {
+        console.error("データ取得エラー: ", error);
+        alert('データの読み込みに失敗しました。');
       }
     },
 
@@ -200,6 +222,100 @@ document.addEventListener('alpine:init', () => {
 
     get totalAmount() {
       return this.estimateItems.reduce((sum, it) => sum + this.calcPrice(it), 0);
+    },
+
+    // 画像選択時の処理。プレビューURLとFileオブジェクトの両方を保存する
+    handleImageUpload(event, customerIndex) {
+      const files = event.target.files;
+      if (!files) return;
+
+      // 既存のプレビューURLを解放
+      this.customers[customerIndex].imagePreviews.forEach(url => URL.revokeObjectURL(url));
+
+      const newPreviews = [];
+      const newFiles = []; // Fileオブジェクトを格納する配列
+      for (const file of files) {
+        newPreviews.push(URL.createObjectURL(file));
+        newFiles.push(file); // Fileオブジェクトを保存
+      }
+      this.customers[customerIndex].imagePreviews = newPreviews;
+      this.customers[customerIndex].imageFiles = newFiles; // Fileオブジェクトをstateに保存
+    },
+
+    /**
+     * Cloudinaryに画像をアップロードする
+     * @param {File} file - アップロードするファイル
+     * @param {string} folderName - 保存先のフォルダ名
+     * @returns {Promise<string>} アップロードされた画像のURL
+     */
+    async uploadImageToCloudinary(file, folderName) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', this.CLOUDINARY_CONFIG.UPLOAD_PRESET);
+      formData.append('folder', folderName);
+
+      const url = `https://api.cloudinary.com/v1_1/${this.CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Cloudinaryへの画像アップロードに失敗しました。');
+      }
+
+      const data = await response.json();
+      return data.secure_url;
+    },
+
+    async submitForm() {
+      // 1. 動的な名前を決定
+      const folderName = `${this.selectedYear}_seijinshiki`;
+      const collectionName = `${this.selectedYear}_seijinshiki`;
+
+      // 2. 顧客データ内の画像URLを準備
+      const processedCustomers = await Promise.all(this.customers.map(async (customer) => {
+        // 新しい画像ファイルがある場合のみ、アップロード処理を実行
+        if (customer.imageFiles && customer.imageFiles.length > 0) {
+          const newImageUrls = await Promise.all(
+            customer.imageFiles.map(file => this.uploadImageToCloudinary(file, folderName))
+          );
+
+          // Firestoreに保存する用の新しい顧客オブジェクトを作成
+          const customerData = { ...customer };
+          delete customerData.imageFiles;
+          delete customerData.imagePreviews;
+          // 既存のURLを新しいURLで完全に置き換える
+          customerData.imageUrls = newImageUrls;
+          return customerData;
+        } else {
+          // 新しい画像ファイルがない場合は、既存のデータをそのまま返す
+          const customerData = { ...customer };
+          delete customerData.imageFiles;
+          delete customerData.imagePreviews;
+          return customerData;
+        }
+      }));
+
+      // 3. Firestoreに保存する最終的なデータを作成
+    },
+
+    async deleteForm() {
+      if (!confirm('本当にこのカルテを削除しますか？')) {
+        return; // ユーザーがキャンセルした場合
+      }
+      try {
+        const collectionName = `${this.selectedYear}_seijinshiki`;
+        const docRef = doc(db, collectionName, this.currentGroupId);
+        await deleteDoc(docRef);
+
+        alert('カルテを削除しました。');
+        window.location.href = './schedule.html'; // 削除後、受付管理ページへ遷移
+      } catch (error) {
+        console.error("削除エラー: ", error);
+        alert(`削除中にエラーが発生しました。\n${error.message}`);
+      }
     },
 
     // ===== 共通ユーティリティ =====
