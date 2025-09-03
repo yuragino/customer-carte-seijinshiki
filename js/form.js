@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+// ----- FirebaseとCloudinaryの設定 -----
 const firebaseConfig = {
   apiKey: "AIzaSyBOMtAoCObyoalTk6_nVpGlsnLcGSw4Jzc",
   authDomain: "kimono-coordinate.firebaseapp.com",
@@ -12,203 +13,204 @@ const firebaseConfig = {
   measurementId: "G-VVTT0QVXQQ"
 };
 
+const CLOUDINARY_CONFIG = {
+  CLOUD_NAME: 'dxq1xqypx', // あなたのCloudinaryクラウド名
+  UPLOAD_PRESET: 'unsigned_preset', // あなたのアップロードプリセット名
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-// ===== 定数定義 =====
+
+// ----- 定数定義 -----
 const PRICE = {
   FURISODE: {
-    KITSUKE: {
-      MAEDORI: 13200,
-      TOUJITSU: 16500,
-      BOTH: 25300,
-    },
+    KITSUKE: { MAEDORI: 13200, TOUJITSU: 16500, BOTH: 25300 },
     HAIR_MAKE: 10000,
     HAIR_ONLY: 6000,
   },
-  HAKAMA: {
-    KITSUKE: 8500
-  }
+  HAKAMA: { KITSUKE: 8500 }
 };
+
+// ----- Alpine.jsコンポーネント -----
 document.addEventListener('alpine:init', () => {
   Alpine.data('app', () => ({
-    // --- ヘッダー関連 ---
+    // ===== 状態管理 =====
     selectedYear: new Date().getFullYear(),
-    get yearOptions() {
-      const currentYear = new Date().getFullYear();
-      return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
-    },
+    currentCustomerId: null, // 編集中のドキュメントID
+    isSubmitting: false,  // フォーム送信中フラグ
 
-    CLOUDINARY_CONFIG: {
-      CLOUD_NAME: 'dxq1xqypx',
-      UPLOAD_PRESET: 'unsigned_preset',
-    },
+    // --- フォーム全体のデータ ---
+    formData: createInitialFormData(),
 
-    // DB登録に必要な内容まとめ
-    formData: {
-      basic: {
-        reservationDate: '',
-        name: '',
-        kana: '',
-        introducer: '',
-        phone: '',
-        address: '',
-        lineType: '教室LINE',
-        height: '',
-        footSize: '',
-        outfit: '振袖',
-        rentalType: '自前',
-        outfitMemo: '',
-        hairMakeStaff: ''
-      },
-      // 当日スケジュール
-      toujitsu: {
-        schedule: [
-          { id: 1, type: 'hair', start: '', end: '' },
-          { id: 2, type: 'kitsuke', start: '', end: '' }
-        ],
-        note: ''
-      },
-      imagePreviews: [], // 画面表示用のプレビューURL
-      imageFiles: [],    // アップロード用のFileオブジェクト
-      meetings: [],
-      maedoriStatus: 'あり',
-      maedori: null,
-      estimate: {
-        receiptDate: ''
-      }
-    },
+    // --- メディアファイル管理 ---
+    newImageFiles: [],
+    newVideoFiles: [],
+    newImagePreviews: [],
+    newVideoPreviews: [],
 
-    // --- 初期化 ---
+    // --- 打ち合わせモーダル用 ---
+    meetingModalVisible: false,
+    meetingForm: createInitialMeetingForm(),
+    meetingEditId: null, // 編集中のmeetingのID
+
+    // ===== 初期化処理 =====
     async init() {
       const params = new URLSearchParams(window.location.search);
-      // URLからyearパラメータを取得し、なければ現在の年をデフォルト値にする
-      const yearFromUrl = params.get('year');
-      this.selectedYear = yearFromUrl ? parseInt(yearFromUrl) : new Date().getFullYear();
+      this.selectedYear = parseInt(params.get('year')) || new Date().getFullYear();
+      this.currentCustomerId = params.get('customer');
 
-      const groupId = params.get('group');
-      this.currentGroupId = groupId;
-
-      if (groupId) {
-        // 編集モード：既存データを読み込む
-        await this.loadFormData(groupId);
-      } else {
-        // 新規登録モード：初期データを設定
-        this.updateCustomerList();
+      if (this.currentCustomerId) {
+        await this.loadFormData(this.currentCustomerId);
       }
     },
 
-    async loadFormData(groupId) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('year', this.selectedYear);
-      window.history.pushState({}, '', url);
+    // ===== ヘッダー =====
+    get yearOptions() {
+      const currentYear = new Date().getFullYear();
+      return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2];
+    },
+
+    // ===== データ読み込み・保存 =====
+    async loadFormData(customerId) {
       try {
         const collectionName = `${this.selectedYear}_seijinshiki`;
-        const docRef = doc(db, collectionName, groupId);
+        const docRef = doc(db, collectionName, customerId);
         const docSnap = await getDoc(docRef);
 
+        if (docSnap.exists()) {
+          const loadedData = docSnap.data();
+          // 読み込んだデータでformDataを更新。デフォルト値とマージして項目不足を防ぐ
+          this.formData = deepMerge(createInitialFormData(), loadedData);
+        } else {
+          alert('指定されたデータが見つかりませんでした。');
+          this.currentCustomerId = null;
+        }
       } catch (error) {
         console.error("データ取得エラー: ", error);
         alert('データの読み込みに失敗しました。');
       }
     },
 
-    // ===== 打ち合わせ・お預かり =====
-    meetingModalVisible: false,
-    meetingForm: { type: '打ち合わせ', date: '', place: '', note: '' },
-    meetingEditIndex: null,
+    async submitForm() {
+      if (!this.formData.basic.name) {
+        alert('お客様の名前は必須です。');
+        return;
+      }
+      this.isSubmitting = true;
 
-    openMeetingModal() {
-      this.meetingForm = { type: '打ち合わせ', date: '', place: '', note: '' };
-      this.meetingEditIndex = null;
-      this.meetingModalVisible = true;
+      try {
+        const folderName = `${this.selectedYear}_seijinshiki`;
+        const tags = [this.formData.basic.name]; // タグとしてお客様の名前を使用
+
+        // 1. 新しい画像をCloudinaryにアップロード
+        const newImageUrls = await Promise.all(
+          this.newImageFiles.map(file => this.uploadMediaToCloudinary(file, folderName, tags))
+        );
+        // 2. 新しい動画をCloudinaryにアップロード
+        const newVideoUrls = await Promise.all(
+          this.newVideoFiles.map(file => this.uploadMediaToCloudinary(file, folderName, tags))
+        );
+
+        // 3. 保存するデータオブジェクトを作成
+        const dataToSave = JSON.parse(JSON.stringify(this.formData)); // ディープコピー
+        dataToSave.imageUrls.push(...newImageUrls);
+        dataToSave.videoUrls.push(...newVideoUrls);
+        dataToSave.updatedAt = serverTimestamp();
+
+        const collectionName = `${this.selectedYear}_seijinshiki`;
+
+        if (this.currentCustomerId) {
+          // 更新処理
+          const docRef = doc(db, collectionName, this.currentCustomerId);
+          await updateDoc(docRef, dataToSave);
+          alert('カルテを更新しました。');
+        } else {
+          // 新規作成処理
+          dataToSave.createdAt = serverTimestamp();
+          const docRef = await addDoc(collection(db, collectionName), dataToSave);
+          alert('カルテを登録しました。');
+          // 登録後に編集画面に遷移
+          window.location.href = `./form.html?year=${this.selectedYear}&customer=${docRef.id}`;
+        }
+      } catch (error) {
+        console.error("保存エラー: ", error);
+        alert(`保存中にエラーが発生しました。\n${error.message}`);
+      } finally {
+        this.isSubmitting = false;
+      }
     },
 
+    async deleteForm() {
+      if (!confirm('本当にこのカルテを削除しますか？\nこの操作は元に戻せません。')) return;
+
+      this.isSubmitting = true;
+      try {
+        const collectionName = `${this.selectedYear}_seijinshiki`;
+        await deleteDoc(doc(db, collectionName, this.currentCustomerId));
+        alert('カルテを削除しました。');
+        window.location.href = `./schedule.html?year=${this.selectedYear}`;
+      } catch (error) {
+        console.error("削除エラー: ", error);
+        alert(`削除中にエラーが発生しました。\n${error.message}`);
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+
+    // ===== 打ち合わせ・お預かり =====
+    get sortedMeetings() {
+      return [...this.formData.meetings].sort((a, b) => new Date(a.date) - new Date(b.date));
+    },
+    openMeetingModal() {
+      this.meetingForm = createInitialMeetingForm();
+      this.meetingEditId = null;
+      this.meetingModalVisible = true;
+    },
     closeMeetingModal() {
       this.meetingModalVisible = false;
     },
-
-    saveMeeting() {
-      if (this.meetingEditIndex !== null) {
-        this.formData.meetings[this.meetingEditIndex] = { ...this.meetingForm };
-      } else {
-        this.formData.meetings.push({ ...this.meetingForm });
-      }
-      this.meetingModalVisible = false;
-      this.meetingEditIndex = null;
-    },
-    editMeeting(index) {
-      this.meetingForm = { ...this.formData.meetings[index] };
-      this.meetingEditIndex = index;
+    editMeeting(meeting) {
+      this.meetingForm = { ...meeting };
+      this.meetingEditId = meeting.id;
       this.meetingModalVisible = true;
     },
-    deleteMeeting(index) {
-      if (confirm('この項目を削除しますか？')) {
-        this.formData.meetings.splice(index, 1);
+    saveMeeting() {
+      if (!this.meetingForm.date) {
+        alert('日時を入力してください。');
+        return;
       }
-    },
-    get sortedMeetings() {
-      return [...this.formData.meetings].sort((a, b) => {
-        if (a.type !== b.type) {
-          return a.type === '打ち合わせ' ? -1 : 1;
+      if (this.meetingEditId) {
+        const index = this.formData.meetings.findIndex(m => m.id === this.meetingEditId);
+        if (index !== -1) {
+          this.formData.meetings[index] = { ...this.meetingForm };
         }
-        return new Date(a.date) - new Date(b.date);
-      });
-    },
-
-    // ===== 前撮り =====
-    maedoriModalVisible: false,
-    maedoriForm: { type: 'スタジオ', camera: '', date: '', hairStart: '', hairEnd: '', kitsukeStart: '', kitsukeEnd: '', shootStart: '', shootEnd: '', place: '', note: '' },
-    editMaedoriMode: false,
-
-    openMaedoriModal() {
-      this.resetMaedoriForm();
-      this.editMaedoriMode = false;
-      this.maedoriModalVisible = true;
-    },
-    editMaedori() {
-      if (this.formData.maedori) {
-        this.maedoriForm = { ...this.formData.maedori };
+      } else {
+        this.formData.meetings.push({ ...this.meetingForm, id: Date.now() });
       }
-      this.editMaedoriMode = true;
-      this.maedoriModalVisible = true;
+      this.closeMeetingModal();
     },
-    closeMaedoriModal() {
-      this.maedoriModalVisible = false;
-    },
-    saveMaedori() {
-      this.formData.maedori = { ...this.maedoriForm };
-      this.maedoriModalVisible = false;
-    },
-    deleteMaedori() {
-      if (confirm('本当に削除しますか？')) {
-        this.formData.maedori = null;
+    deleteMeeting(meetingToDelete) {
+      if (confirm('この項目を削除しますか？')) {
+        this.formData.meetings = this.formData.meetings.filter(m => m.id !== meetingToDelete.id);
       }
-    },
-    resetMaedoriForm() {
-      this.maedoriForm = { type: 'スタジオ', camera: '', date: '', hairStart: '', hairEnd: '', kitsukeStart: '', kitsukeEnd: '', shootStart: '', shootEnd: '', place: '', note: '' };
     },
 
     // ===== 見積もり =====
-    estimateItems: [
-      { name: "着付け", fixed: true, toujitsu: false, maedori: false }, // index0
-      { name: "ヘア", fixed: true, toujitsu: false, maedori: false, option: "none" } // index1
-    ],
-
     addOption() {
-      this.estimateItems.push({ name: "", fixed: false, toujitsu: false, maedori: false, price: null });
+      this.formData.estimateItems.push({ name: "", fixed: false, toujitsu: false, maedori: false, price: 0 });
     },
-
     calcPrice(item) {
+      const outfit = this.formData.basic.outfit;
       if (item.name === "着付け") {
-        if (this.formData.basic.outfit === "振袖") {
+        if (outfit === "振袖") {
           if (item.toujitsu && item.maedori) return PRICE.FURISODE.KITSUKE.BOTH;
           if (item.toujitsu) return PRICE.FURISODE.KITSUKE.TOUJITSU;
           if (item.maedori) return PRICE.FURISODE.KITSUKE.MAEDORI;
-        } else if (this.formData.basic.outfit === "袴") {
-          return PRICE.HAKAMA.KITSUKE;
+        } else if (outfit === "袴") {
+          return item.toujitsu ? PRICE.HAKAMA.KITSUKE : 0;
         }
       }
-      if (item.name === "ヘア" && this.formData.basic.outfit === "振袖") {
+      if (item.name === "ヘア" && outfit === "振袖") {
         let unitPrice = 0;
         if (item.option === "hairMake") unitPrice = PRICE.FURISODE.HAIR_MAKE;
         if (item.option === "hairOnly") unitPrice = PRICE.FURISODE.HAIR_ONLY;
@@ -217,137 +219,144 @@ document.addEventListener('alpine:init', () => {
         if (item.maedori) total += unitPrice;
         return total;
       }
-      return item.price ?? 0;
+      return (item.toujitsu || item.maedori) ? (item.price || 0) : 0;
     },
-
     get totalAmount() {
-      return this.estimateItems.reduce((sum, it) => sum + this.calcPrice(it), 0);
+      if (!this.formData.estimateItems) return 0;
+      return this.formData.estimateItems.reduce((sum, item) => sum + this.calcPrice(item), 0);
     },
 
-    // 画像選択時の処理。プレビューURLとFileオブジェクトの両方を保存する
-    handleImageUpload(event, customerIndex) {
-      const files = event.target.files;
-      if (!files) return;
-
-      // 既存のプレビューURLを解放
-      this.customers[customerIndex].imagePreviews.forEach(url => URL.revokeObjectURL(url));
-
-      const newPreviews = [];
-      const newFiles = []; // Fileオブジェクトを格納する配列
-      for (const file of files) {
-        newPreviews.push(URL.createObjectURL(file));
-        newFiles.push(file); // Fileオブジェクトを保存
+    // ===== メディア処理 =====
+    handleImageUpload(event) {
+      this.newImageFiles = [...event.target.files];
+      this.newImagePreviews = this.newImageFiles.map(file => URL.createObjectURL(file));
+      event.target.value = ''; // 同じファイルを選択できるようにリセット
+    },
+    handleVideoUpload(event) {
+      this.newVideoFiles = [...event.target.files];
+      this.newVideoPreviews = this.newVideoFiles.map(file => URL.createObjectURL(file));
+      event.target.value = '';
+    },
+    removeMedia(type, index) {
+      if (confirm('このメディアを削除しますか？')) {
+        if (type === 'image') this.formData.imageUrls.splice(index, 1);
+        if (type === 'video') this.formData.videoUrls.splice(index, 1);
       }
-      this.customers[customerIndex].imagePreviews = newPreviews;
-      this.customers[customerIndex].imageFiles = newFiles; // Fileオブジェクトをstateに保存
     },
-
-    /**
-     * Cloudinaryに画像をアップロードする
-     * @param {File} file - アップロードするファイル
-     * @param {string} folderName - 保存先のフォルダ名
-     * @returns {Promise<string>} アップロードされた画像のURL
-     */
-    async uploadImageToCloudinary(file, folderName) {
+    async uploadMediaToCloudinary(file, folderName, tags = []) {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', this.CLOUDINARY_CONFIG.UPLOAD_PRESET);
+      formData.append('upload_preset', CLOUDINARY_CONFIG.UPLOAD_PRESET);
       formData.append('folder', folderName);
+      formData.append('tags', tags.join(','));
 
-      const url = `https://api.cloudinary.com/v1_1/${this.CLOUDINARY_CONFIG.CLOUD_NAME}/image/upload`;
+      const resourceType = file.type.startsWith('image/') ? 'image' : 'video';
+      const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.CLOUD_NAME}/${resourceType}/upload`;
 
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Cloudinaryへの画像アップロードに失敗しました。');
-      }
+      const response = await fetch(url, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Cloudinaryへのアップロードに失敗しました。');
 
       const data = await response.json();
       return data.secure_url;
     },
 
-    async submitForm() {
-      // 1. 動的な名前を決定
-      const folderName = `${this.selectedYear}_seijinshiki`;
-      const collectionName = `${this.selectedYear}_seijinshiki`;
-
-      // 2. 顧客データ内の画像URLを準備
-      const processedCustomers = await Promise.all(this.customers.map(async (customer) => {
-        // 新しい画像ファイルがある場合のみ、アップロード処理を実行
-        if (customer.imageFiles && customer.imageFiles.length > 0) {
-          const newImageUrls = await Promise.all(
-            customer.imageFiles.map(file => this.uploadImageToCloudinary(file, folderName))
-          );
-
-          // Firestoreに保存する用の新しい顧客オブジェクトを作成
-          const customerData = { ...customer };
-          delete customerData.imageFiles;
-          delete customerData.imagePreviews;
-          // 既存のURLを新しいURLで完全に置き換える
-          customerData.imageUrls = newImageUrls;
-          return customerData;
-        } else {
-          // 新しい画像ファイルがない場合は、既存のデータをそのまま返す
-          const customerData = { ...customer };
-          delete customerData.imageFiles;
-          delete customerData.imagePreviews;
-          return customerData;
-        }
-      }));
-
-      // 3. Firestoreに保存する最終的なデータを作成
-    },
-
-    async deleteForm() {
-      if (!confirm('本当にこのカルテを削除しますか？')) {
-        return; // ユーザーがキャンセルした場合
-      }
-      try {
-        const collectionName = `${this.selectedYear}_seijinshiki`;
-        const docRef = doc(db, collectionName, this.currentGroupId);
-        await deleteDoc(docRef);
-
-        alert('カルテを削除しました。');
-        window.location.href = './schedule.html'; // 削除後、受付管理ページへ遷移
-      } catch (error) {
-        console.error("削除エラー: ", error);
-        alert(`削除中にエラーが発生しました。\n${error.message}`);
+    // ===== ユーティリティ =====
+    swapSchedule() {
+      const schedule = this.formData.toujitsu.schedule;
+      if (schedule.length === 2) {
+        // 配列の要素を入れ替える
+        [schedule[0], schedule[1]] = [schedule[1], schedule[0]];
       }
     },
-
-    // ===== 共通ユーティリティ =====
-    getWeekday(dateStr) {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      return ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
-    },
-
     formatDisplayDate(dateStr) {
       if (!dateStr) return '';
       const dt = new Date(dateStr);
-      return dt.getFullYear() + "/" +
-        String(dt.getMonth() + 1).padStart(2, "0") + "/" +
-        String(dt.getDate()).padStart(2, "0") +
-        "(" + this.getWeekday(dateStr) + ")" +
-        String(dt.getHours()).padStart(2, "0") + ":" +
-        String(dt.getMinutes()).padStart(2, "0");
+      const day = ["日", "月", "火", "水", "木", "金", "土"][dt.getDay()];
+      return `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}(${day}) ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
     },
-
     formatYen(value) {
-      if (!value || isNaN(value)) return "—";
+      if (typeof value !== 'number' || isNaN(value)) return "—";
       return value.toLocaleString('ja-JP') + "円";
     },
-
-    swapSchedule() {
-      const arr = this.formData.toujitsu.schedule;
-      if (arr.length === 2) {
-        [arr[0], arr[1]] = [arr[1], arr[0]];
-        this.formData.toujitsu.schedule = [...arr];
-      }
-    }
-
-  }))
+  }));
 });
+
+// ===== ヘルパー関数 =====
+
+/**
+ * フォームの初期データ構造を生成する関数
+ */
+function createInitialFormData() {
+  return {
+    // 基本情報
+    basic: {
+      reservationDate: new Date().toISOString().slice(0, 10),
+      name: '', kana: '', introducer: '', phone: '', address: '',
+      lineType: '教室LINE', height: null, footSize: null, outfit: '振袖',
+      rentalType: '自前', outfitMemo: '', hairMakeStaff: ''
+    },
+    // 当日スケジュール
+    toujitsu: {
+      schedule: [
+        { id: 1, type: 'hair', start: '', end: '' },
+        { id: 2, type: 'kitsuke', start: '', end: '' }
+      ],
+      note: ''
+    },
+    // 打ち合わせ・お預かり
+    meetings: [],
+    // 前撮り情報
+    maedoriStatus: 'あり',
+    maedori: {
+      type: 'スタジオ', camera: '', date: '', hairStart: '', hairEnd: '',
+      kitsukeStart: '', kitsukeEnd: '', shootStart: '', shootEnd: '',
+      place: '', note: ''
+    },
+    // 見積もり情報
+    estimateItems: [
+      { name: "着付け", fixed: true, toujitsu: true, maedori: false },
+      { name: "ヘア", fixed: true, toujitsu: true, maedori: false, option: "hairMake" }
+    ],
+    estimate: { receiptDate: '' },
+    // メディアURL
+    imageUrls: [],
+    videoUrls: [],
+    // その他
+    isCanceled: false,
+    createdAt: null,
+    updatedAt: null,
+  };
+}
+
+/**
+ * 打ち合わせモーダルの初期データ
+ */
+function createInitialMeetingForm() {
+  return { id: null, type: '打ち合わせ', date: '', place: '', note: '' };
+}
+
+/**
+ * オブジェクトを再帰的にマージするヘルパー関数
+ * @param {object} target マージ先のオブジェクト
+ * @param {object} source マージ元のオブジェクト
+ * @returns {object} マージ後のオブジェクト
+ */
+function deepMerge(target, source) {
+  const output = { ...target };
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target))
+          Object.assign(output, { [key]: source[key] });
+        else
+          output[key] = deepMerge(target[key], source[key]);
+      } else {
+        Object.assign(output, { [key]: source[key] });
+      }
+    });
+  }
+  return output;
+}
+function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}

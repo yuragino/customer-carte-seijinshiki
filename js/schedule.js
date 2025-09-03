@@ -1,5 +1,6 @@
+// Firebase SDK の import をモジュール形式に
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBOMtAoCObyoalTk6_nVpGlsnLcGSw4Jzc",
@@ -17,16 +18,17 @@ const db = getFirestore(app);
 
 document.addEventListener('alpine:init', () => {
   Alpine.data('schedulePage', () => ({
-    groups: [],
+    customers: [],
+    isLoading: true,
     boothOptionsFemale: ['A1', 'A2', 'B1', 'B2'],
-    boothOptionsMale: ['C1', 'C2', 'B1', 'B2'],
+    boothOptionsMale: ['C1', 'C2'],
     staffOptions: ['佐藤', '鈴木', '松本'],
 
     statusCycle: {
       '受付完了': '案内完了',
       '案内完了': '着付完了',
       '着付完了': '見送り完了',
-      '見送り完了': '対応完了',
+      '見送り完了': '済',
     },
 
     statusTimestampKeys: {
@@ -39,145 +41,153 @@ document.addEventListener('alpine:init', () => {
     selectedYear: new Date().getFullYear(),
     get yearOptions() {
       const currentYear = new Date().getFullYear();
-      return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
+      return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2];
     },
 
     init() {
       const params = new URLSearchParams(window.location.search);
-      // URLからyearパラメータを取得し、なければ現在の年をデフォルト値にする
-      const yearFromUrl = params.get('year');
-      this.selectedYear = yearFromUrl ? parseInt(yearFromUrl) : new Date().getFullYear();
+      this.selectedYear = parseInt(params.get('year')) || new Date().getFullYear();
       this.fetchSchedule();
     },
 
     async fetchSchedule() {
+      this.isLoading = true;
       const url = new URL(window.location.href);
       url.searchParams.set('year', this.selectedYear);
       window.history.pushState({}, '', url);
-      this.groups = [];
+
+      this.customers = [];
       const collectionName = `${this.selectedYear}_seijinshiki`;
       try {
-        const colRef = collection(db, collectionName);
-        const querySnapshot = await getDocs(colRef);
-        const fetchedGroups = [];
-        querySnapshot.forEach((doc) => {
-          fetchedGroups.push({
-            groupId: doc.id,
-            ...doc.data()
-          });
-        });
-        fetchedGroups.sort((a, b) => {
-          // キャンセル済みかどうかでソート
-          if (a.representative.isCanceled && !b.representative.isCanceled) {
-            return 1; // aがキャンセル済みで、bが未キャンセルなら、aを後ろに
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        const fetchedCustomers = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // お客様リストのソート
+        fetchedCustomers.sort((a, b) => {
+          if (a.isCanceled !== b.isCanceled) {
+            return a.isCanceled ? 1 : -1;
           }
-          if (!a.representative.isCanceled && b.representative.isCanceled) {
-            return -1; // aが未キャンセルで、bがキャンセル済みなら、aを前に
-          }
-          // キャンセル状態が同じ場合は、来店予定時間でソート
-          if (a.representative.visitTime < b.representative.visitTime) return -1;
-          if (a.representative.visitTime > b.representative.visitTime) return 1;
-          return 0;
+          const timeA = a.toujitsu?.schedule[0]?.start || '99:99';
+          const timeB = b.toujitsu?.schedule[0]?.start || '99:99';
+          return timeA.localeCompare(timeB);
         });
-        this.groups = fetchedGroups;
+
+        this.customers = fetchedCustomers;
       } catch (error) {
-        console.error("Error fetching schedule: ", error);
+        console.error("スケジュールデータの取得に失敗しました: ", error);
         alert("データの取得に失敗しました。");
+      } finally {
+        this.isLoading = false;
       }
     },
 
-    // updateCustomerField 関数のシグネチャを変更
-    async updateCustomerField(groupId, customerId, field, value, checked) {
+    async updateCustomerField(customerId, field, value,) {
+      const collectionName = `${this.selectedYear}_seijinshiki`;
+      const docRef = doc(db, collectionName, customerId);
       try {
-        const collectionName = `${this.selectedYear}_seijinshiki`;
-        const docRef = doc(db, collectionName, groupId);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) throw new Error("Document not found");
+        await updateDoc(docRef, { [field]: value });
+        console.log(`顧客ID:${customerId} の ${field} を更新しました。`);
+      } catch (error) {
+        console.error(`${field} の更新に失敗しました:`, error);
+        alert(`${field} の更新に失敗しました。`);
+        // エラー発生時はデータを再取得して画面を元に戻す
+        this.fetchSchedule();
+      }
+    },
+    async updateCustomerStaff(customerId, staffName, checked) {
+      const collectionName = `${this.selectedYear}_seijinshiki`;
+      const docRef = doc(db, collectionName, customerId);
+      try {
+        // 一度現在のデータを取得
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) throw new Error("Document not found");
+        const customer = snap.data();
 
-        const customers = docSnap.data().customers;
-        const customerIndex = customers.findIndex(customerData => customerData.id === customerId);
-        if (customerIndex === -1) throw new Error("Customer not found");
+        let staffArray = customer.staff || [];
 
-        if (field === 'staff') {
-          let currentStaff = customers[customerIndex].staff || [];
-          // checked引数を使って、追加するか削除するかを判断
-          if (checked) {
-            // チェックが入った場合、配列に追加（重複は避ける）
-            if (!currentStaff.includes(value)) {
-              currentStaff.push(value);
-            }
-          } else {
-            // チェックが外れた場合、配列から削除
-            const valueIndex = currentStaff.indexOf(value);
-            if (valueIndex > -1) {
-              currentStaff.splice(valueIndex, 1);
-            }
+        if (checked) {
+          // チェック → 配列に追加（重複なし）
+          if (!staffArray.includes(staffName)) {
+            staffArray.push(staffName);
           }
-          customers[customerIndex].staff = currentStaff;
         } else {
-          customers[customerIndex][field] = value;
+          // チェック外す → 配列から削除
+          staffArray = staffArray.filter(s => s !== staffName);
         }
 
-        await updateDoc(docRef, { customers: customers });
-        console.log("Updated successfully!");
+        await updateDoc(docRef, { staff: staffArray });
+
+        // 画面上の customer も即座に更新して反映
+        const target = this.customers.find(c => c.id === customerId);
+        if (target) target.staff = staffArray;
+
+        console.log(`顧客ID:${customerId} の staff 更新成功`, staffArray);
       } catch (error) {
-        console.error(`Error updating ${field}:`, error);
-        alert(`${field}の更新に失敗しました。`);
+        console.error("スタッフ更新失敗:", error);
+        alert("スタッフ更新に失敗しました。");
+        this.fetchSchedule();
       }
     },
 
-    async updateStatus(group, customerId) {
+    async updateStatus(customer) {
+      const currentStatus = customer.status || '受付完了';
+      const nextStatus = this.statusCycle[currentStatus];
+      if (!nextStatus) return; // 最終ステータスなら何もしない
+
+      const collectionName = `${this.selectedYear}_seijinshiki`;
+      const docRef = doc(db, collectionName, customer.id);
+
+      // 更新するデータを準備
+      const updatePayload = {
+        status: nextStatus
+      };
+
+      // タイムスタンプを記録するキーを取得し、更新データに追加
+      const timestampKey = this.statusTimestampKeys[currentStatus];
+      if (timestampKey) {
+        // Firestoreのネストされたオブジェクトのフィールドを更新する記法
+        updatePayload[`statusTimestamps.${timestampKey}`] = serverTimestamp();
+      }
+
       try {
-        // ドキュメントへの参照を作成
-        const collectionName = `${this.selectedYear}_seijinshiki`;
-        const docRef = doc(db, collectionName, group.groupId);
-
-        // データの取得と更新対象の特定
-        const customers = group.customers;
-        const customerIndex = customers.findIndex(c => c.id === customerId);
-        const customer = customers[customerIndex];
-
-        // ステータスの判定と次のステータスの決定
-        const currentStatus = customer.status || '受付完了';
-        const nextStatus = this.statusCycle[currentStatus];
-
-        if (nextStatus === currentStatus) {
-          // 最終ステータスに達した場合は何もしない
-          return;
-        }
-        // ステータスとタイムスタンプを更新
+        await updateDoc(docRef, updatePayload);
+        // 画面上の表示を即時反映
         customer.status = nextStatus;
-        const timestampKey = this.statusTimestampKeys[currentStatus];
-        customer.statusTimestamps[timestampKey] = new Date();
-        // Firestoreにデータを更新
-        await updateDoc(docRef, { customers: customers });
-        console.log("Status and timestamp updated successfully!");
+        // タイムスタンプも仮の値を設定しておく（正確な値はリロード時に反映）
+        if (timestampKey) {
+          if (!customer.statusTimestamps) customer.statusTimestamps = {};
+          customer.statusTimestamps[timestampKey] = new Date();
+        }
+        console.log(`ステータスを "${nextStatus}" に更新しました。`);
       } catch (error) {
-        console.error("Error updating status:", error);
+        console.error("ステータスの更新に失敗しました:", error);
         alert("ステータス更新に失敗しました。");
         this.fetchSchedule();
       }
     },
 
     getStatusClass(status) {
-      const currentStatus = status || '受付完了';
       const classMap = {
         '受付完了': 'status-received',
         '案内完了': 'status-guided',
         '着付完了': 'status-dressing-done',
         '見送り完了': 'status-sent-off',
-        '対応完了': 'status-completed',
+        '済': 'status-completed',
       };
-      return classMap[currentStatus] || 'status-received';
+      return classMap[status || '受付完了'];
     },
 
     formatTimestamp(timestamp) {
       if (!timestamp) return '--:--';
-      const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
+      // FirestoreのTimestampオブジェクトとJSのDateオブジェクトの両方に対応
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (isNaN(date)) return '--:--';
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${hours}:${minutes}`;
     },
   }));
 });
-// cspell:ignore Firestore

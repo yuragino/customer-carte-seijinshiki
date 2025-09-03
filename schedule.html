@@ -5,16 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>お客様カルテ - 当日スケジュール</title>
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
-  <!-- Custom Script -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script type="module" src="./js/schedule.js"></script>
-  <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <!-- Styles -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    integrity="sha384-...." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/sanitize.css">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/schedule.css">
@@ -42,14 +37,12 @@
   </header>
 
   <main>
-    <p class="manual-link"><a href="./manual-schedule.html">📖 受付管理マニュアル</a></p>
     <table>
       <thead>
         <tr>
           <th>来店予定</th>
           <th>来店時刻</th>
-          <th>代表者名</th>
-          <th>個人名</th>
+          <th>名前</th>
           <th>ブース</th>
           <th>担当者</th>
           <th>ステータス</th>
@@ -57,80 +50,74 @@
         </tr>
       </thead>
       <tbody>
-        <template x-if="groups.length === 0">
+        <template x-if="customers.length === 0 && !isLoading">
           <tr>
-            <td colspan="9" style="text-align: center; padding: 2rem;">
+            <td colspan="7" style="text-align: center; padding: 2rem;">
               該当するデータがありません。
             </td>
           </tr>
         </template>
+        <template x-if="isLoading">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem;">
+              <i class="fa-solid fa-spinner fa-spin"></i> 読み込み中...
+            </td>
+          </tr>
+        </template>
 
-        <template x-for="group in groups.toReversed()" :key="group.groupId">
-          <template x-for="(customer, index) in group.customers" :key="customer.id">
-            <tr :class="{'is-canceled': group.representative.isCanceled}">
-              <template x-if="index === 0">
-                <td :rowspan="group.customers.length" x-text="group.representative.visitTime">
-                </td>
-              </template>
+        <template x-for="customer in customers" :key="customer.id">
+          <tr :class="{'is-canceled': customer.isCanceled}">
+            <td x-text="customer.toujitsu?.schedule[0]?.start || '--:--'"></td>
 
-              <td x-text="formatTimestamp(customer.statusTimestamps?.receptionCompletedAt)"></td>
+            <td x-text="formatTimestamp(customer.statusTimestamps?.receptionCompletedAt)"></td>
 
-              <template x-if="index === 0">
-                <td :rowspan="group.customers.length" x-text="`${group.representative.lastName}さま`"></td>
-              </template>
+            <td>
+              <span :class="customer.basic?.outfit === '振袖' ? 'outfit-furisode' : 'outfit-hakama'"
+                x-text="customer.basic?.name || '名前なし'"></span>
+            </td>
 
-              <td>
-                <span :class="customer.gender === 'male' ? 'gender-male' : 'gender-female'"
-                  x-text="`${customer.lastName} ${customer.firstName}`"></span>
-              </td>
+            <td>
+              <div class="booth-radios">
+                <template x-for="booth in customer.basic?.outfit === '振袖' ? boothOptionsFemale : boothOptionsMale"
+                  :key="booth">
+                  <label :class="{'disabled': customer.isCanceled}">
+                    <input type="radio" :name="`booth-${customer.id}`" :value="booth" x-model="customer.booth"
+                      @change="updateCustomerField(customer.id, 'booth', customer.booth)"
+                      :disabled="customer.isCanceled">
+                    <span x-text="booth"></span>
+                  </label>
+                </template>
+              </div>
+            </td>
 
-              <td>
-                <div class="booth-radios">
-                  <template x-for="booth in customer.gender === 'female' ? boothOptionsFemale :boothOptionsMale"
-                    :key="booth">
-                    <label :class="{'disabled': group.representative.isCanceled}">
-                      <input type="radio" :name="`booth-${customer.id}`" :value="booth" x-model="customer.booth"
-                        @change="updateCustomerField(group.groupId, customer.id, 'booth', customer.booth)"
-                        :disabled="group.representative.isCanceled">
-                      <span x-text="booth"></span>
-                    </label>
-                  </template>
-                </div>
-              </td>
+            <td>
+              <div class="staff-checkboxes">
+                <template x-for="staff in staffOptions" :key="staff">
+                  <label :class="{'disabled': customer.isCanceled}">
+                    <input type="checkbox" :value="staff" :name="`staff-${customer.id}-${staff}`"
+                      :checked="(customer.staff || []).includes(staff)"
+                      @change="updateCustomerStaff(customer.id, staff, $event.target.checked)"
+                      :disabled="customer.isCanceled">
+                    <span x-text="staff"></span>
+                  </label>
+                </template>
+              </div>
+            </td>
 
-              <td>
-                <div class="staff-checkboxes">
-                  <template x-for="staff in staffOptions" :key="staff">
-                    <label :class="{'disabled': group.representative.isCanceled}">
-                      <input type="checkbox" :checked="customer.staff && customer.staff.includes(staff)"
-                        @change="updateCustomerField(group.groupId, customer.id, 'staff', staff, $event.target.checked)"
-                        :disabled="group.representative.isCanceled">
-                      <span x-text="staff"></span>
-                    </label>
-                  </template>
-                </div>
-              </td>
+            <td>
+              <button class="status-btn" :class="getStatusClass(customer.status)" @click="updateStatus(customer)"
+                x-show="customer.status !== '済' && !customer.isCanceled" x-text="customer.status || '受付完了'">
+              </button>
+              <span x-show="customer.status === '済'">済</span>
+              <span x-show="customer.isCanceled"><i class="fa-solid fa-user-xmark"></i></span>
+            </td>
 
-              <td>
-                <button class="status-btn" :class="getStatusClass(customer.status)"
-                  @click="updateStatus(group, customer.id)"
-                  x-show="customer.status !== '対応完了' && !group.representative.isCanceled">
-                  <span x-text="customer.status || '受付完了'"></span>
-                </button>
-                <span x-show="customer.status === '対応完了'" x-text="'済'"></span>
-                <span x-show="group.representative.isCanceled">キャンセル済</span>
-              </td>
-
-              <template x-if="index === 0">
-                <td :rowspan="group.customers.length">
-                  <a :href="`form.html?group=${group.groupId}&year=${selectedYear}`" class="detail-link"
-                    :class="{'notes-exist-link': group.representative.notes}">
-                    <i class="fa-solid fa-square-up-right"></i>
-                  </a>
-                </td>
-              </template>
-            </tr>
-          </template>
+            <td>
+              <a :href="`form.html?customer=${customer.id}&year=${selectedYear}`" class="detail-link" title="詳細を開く">
+                <i class="fa-solid fa-square-up-right"></i>
+              </a>
+            </td>
+          </tr>
         </template>
       </tbody>
     </table>

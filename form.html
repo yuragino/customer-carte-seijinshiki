@@ -4,12 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>お客様カルテ - 成人式登録フォーム</title>
-  <!-- Custom Script -->
   <script type="module" src="./js/form.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vanilla-autokana/dist/autokana.min.js" defer></script>
-  <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <!-- Styles -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/sanitize.css">
   <link rel="stylesheet" href="./css/layout.css">
@@ -32,13 +29,13 @@
         <a :href="`./statistics.html?year=${selectedYear}`">統計情報</a>
         <a :href="`./schedule.html?year=${selectedYear}`">受付管理</a>
         <a :href="`./image-carte.html?year=${selectedYear}`">画像検索</a>
-        <a :href="`./form_html?year=${selectedYear}`">新規登録</a>
+        <a :href="`./form.html?year=${selectedYear}`">新規登録</a>
       </nav>
     </div>
   </header>
-  <div class="cancellation-status" x-show="representative.isCanceled === true">この予約はすでにキャンセルされています</div>
+  <div class="cancellation-status" x-show="formData.isCanceled === true">この予約はすでにキャンセルされています</div>
   <div class="delete-container">
-    <button type="button" class="delete-btn" x-show="currentGroupId" @click="deleteForm">
+    <button type="button" class="delete-btn" x-show="currentCustomerId" @click="deleteForm">
       <i class="fa-regular fa-trash-can"></i> カルテを削除
     </button>
   </div>
@@ -56,7 +53,7 @@
           </tr>
           <tr>
             <th>名前</th>
-            <td><input type="text" placeholder="山田 花子" x-model="formData.basic.name" id="name"></td>
+            <td><input type="text" placeholder="山田 花子" x-model="formData.basic.name" id="name" required></td>
           </tr>
           <tr>
             <th>フリガナ</th>
@@ -84,18 +81,18 @@
           </tr>
           <tr>
             <th>身長</th>
-            <td><input type="number" x-model="formData.basic.height"> cm</td>
+            <td><input type="number" x-model.number="formData.basic.height"> cm</td>
           </tr>
           <tr>
             <th>足サイズ</th>
-            <td><input type="number" x-model="formData.basic.footSize"> cm</td>
+            <td><input type="number" x-model.number="formData.basic.footSize"> cm</td>
           </tr>
           <tr>
             <th>衣装</th>
             <td>
-              <button class="toggle-btn" :class="formData.basic.outfit === '振袖' ? 'active-yes':'inactive'"
+              <button type="button" class="toggle-btn" :class="formData.basic.outfit === '振袖' ? 'active-yes':'inactive'"
                 @click="formData.basic.outfit = '振袖'">振袖</button>
-              <button class="toggle-btn" :class="formData.basic.outfit === '袴' ? 'active-yes':'inactive'"
+              <button type="button" class="toggle-btn" :class="formData.basic.outfit === '袴' ? 'active-yes':'inactive'"
                 @click="formData.basic.outfit = '袴'">袴</button>
             </td>
           </tr>
@@ -118,18 +115,17 @@
         </table>
       </div>
 
-      <!-- 当日スケジュール -->
       <div class="card toujitsu-card">
         <h2>
           <i class="fa-regular fa-calendar-check"></i>
           <span>当日スケジュール</span>
-          <button @click="swapSchedule()" class="btn title-actions" x-show="formData.basic.outfit === '振袖'">
+          <button type="button" @click="swapSchedule()" class="btn title-actions"
+            x-show="formData.basic.outfit === '振袖'">
             <i class="fa-solid fa-arrows-up-down"></i>
             <span>入れ替え</span>
           </button>
         </h2>
         <table>
-          <!-- 振袖モード: ヘア＋着付 -->
           <template x-if="formData.basic.outfit === '振袖'">
             <template x-for="task in formData.toujitsu.schedule" :key="task.id">
               <tr>
@@ -141,7 +137,6 @@
               </tr>
             </template>
           </template>
-          <!-- 袴モード: 着付だけ -->
           <template x-if="formData.basic.outfit === '袴'">
             <tr>
               <th>着付時間</th>
@@ -151,8 +146,6 @@
               </td>
             </tr>
           </template>
-
-          <!-- 備考 -->
           <tr>
             <th>備考</th>
             <td>
@@ -162,12 +155,11 @@
         </table>
       </div>
 
-      <!-- 打ち合わせ・お預かり -->
       <div class="card meeting-card">
         <h2>
           <i class="fa-regular fa-calendar-days"></i>
           <span>打ち合わせ・お預かり</span>
-          <button class="btn title-actions" @click="openMeetingModal()">
+          <button type="button" class="btn title-actions" @click="openMeetingModal()">
             <i class="fa-regular fa-plus"></i>
             <span>追加</span>
           </button>
@@ -191,12 +183,12 @@
                 <td x-text="item.place"></td>
                 <td x-text="item.note"></td>
                 <td>
-                  <button class="btn-edit" @click="editMeeting(index)">
+                  <button type="button" class="btn-edit" @click="editMeeting(item)">
                     <i class="fa-solid fa-pen"></i>
                   </button>
                 </td>
                 <td>
-                  <button class="btn-del" @click="deleteMeeting(index)">
+                  <button type="button" class="btn-del" @click="deleteMeeting(item)">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -206,42 +198,36 @@
         </table>
       </div>
 
-      <!-- モーダル -->
-      <div x-show="meetingModalVisible" class="modal-bg" @click.self="closeMeetingModal()">
+      <div x-show="meetingModalVisible" class="modal-bg" @click.self="closeMeetingModal()" x-trap="meetingModalVisible">
         <div class="modal-box">
           <i class="fa-solid fa-xmark close-btn" @click="closeMeetingModal()"></i>
-
           <div>
             <label>種別</label>
             <div>
-              <button class="toggle-btn" :class="meetingForm.type === '打ち合わせ' ? 'active-yes':'inactive'"
+              <button type="button" class="toggle-btn" :class="meetingForm.type === '打ち合わせ' ? 'active-yes':'inactive'"
                 @click="meetingForm.type = '打ち合わせ'">
                 <i class="fa-solid fa-handshake"></i> 打ち合わせ
               </button>
-              <button class="toggle-btn" :class="meetingForm.type === 'お預かり' ? 'active-yes':'inactive'"
+              <button type="button" class="toggle-btn" :class="meetingForm.type === 'お預かり' ? 'active-yes':'inactive'"
                 @click="meetingForm.type = 'お預かり'">
                 <i class="fa-solid fa-box"></i> お預かり
               </button>
             </div>
           </div>
-
           <div style="margin-top:1rem;">
             <label>日時</label>
             <input type="datetime-local" x-model="meetingForm.date">
           </div>
-
           <div style="margin-top:1rem;">
             <label>場所</label>
             <input type="text" x-model="meetingForm.place">
           </div>
-
           <div style="margin-top:1rem;">
             <label>備考</label>
             <textarea x-model="meetingForm.note"></textarea>
           </div>
-
           <div class="modal-actions">
-            <button class="btn" @click="saveMeeting()">保存</button>
+            <button type="button" class="btn" @click="saveMeeting()">保存</button>
           </div>
         </div>
       </div>
@@ -251,18 +237,17 @@
           <i class="fa-solid fa-camera-retro"></i>
           <span>前撮り</span>
           <div class="title-actions">
-            <button class="toggle-btn" :class="formData.maedoriStatus === 'あり' ? 'active-yes' : 'inactive'"
+            <button type="button" class="toggle-btn"
+              :class="formData.maedoriStatus === 'あり' ? 'active-yes' : 'inactive'"
               @click="formData.maedoriStatus = 'あり'">
               <i class="fa-solid fa-circle-check"></i> あり
             </button>
-            <button class="toggle-btn" :class="formData.maedoriStatus === 'なし' ? 'active-no' : 'inactive'"
+            <button type="button" class="toggle-btn" :class="formData.maedoriStatus === 'なし' ? 'active-no' : 'inactive'"
               @click="formData.maedoriStatus = 'なし'">
               <i class="fa-solid fa-circle-xmark"></i> なし
             </button>
           </div>
         </h2>
-
-        <!-- 「あり」の場合 -->
         <table x-show="formData.maedoriStatus === 'あり'">
           <tr>
             <th>種類</th>
@@ -306,8 +291,6 @@
             <td><textarea x-model="formData.maedori.note"></textarea></td>
           </tr>
         </table>
-
-        <!-- 「なし」の場合 -->
         <table x-show="formData.maedoriStatus === 'なし'">
           <tr>
             <th>備考</th>
@@ -316,33 +299,58 @@
         </table>
       </div>
 
-      <!-- メディア -->
       <div class="card media-card">
         <h2><i class="fa-regular fa-images"></i> メディアアップロード</h2>
         <table>
           <tr>
             <th>画像</th>
             <td>
-              <input type="file" multiple accept="image/*" @change="handleImageUpload($event, index)">
+              <input type="file" multiple accept="image/*" @change="handleImageUpload($event)">
               <div class="preview-container">
-                <template x-for="src in customer.imagePreviews" :key="src">
-                  <img :src="src" class="preview-image">
+                <template x-for="(url, index) in formData.imageUrls" :key="url">
+                  <div class="preview-item">
+                    <img :src="url" class="preview-image">
+                    <button type="button" class="preview-delete" @click="removeMedia('image', index)">
+                      <i class="fa-solid fa-times"></i>
+                    </button>
+                  </div>
+                </template>
+                <template x-for="src in newImagePreviews" :key="src">
+                  <div class="preview-item">
+                    <img :src="src" class="preview-image">
+                  </div>
                 </template>
               </div>
             </td>
           </tr>
           <tr>
             <th>動画</th>
-            <td><input type="file" multiple accept="video/*"></td>
+            <td>
+              <input type="file" multiple accept="video/*" @change="handleVideoUpload($event)">
+              <div class="preview-container">
+                <template x-for="(url, index) in formData.videoUrls" :key="url">
+                  <div class="preview-item">
+                    <video :src="url" class="preview-image" controls></video>
+                    <button type="button" class="preview-delete" @click="removeMedia('video', index)">
+                      <i class="fa-solid fa-times"></i>
+                    </button>
+                  </div>
+                </template>
+                <template x-for="src in newVideoPreviews" :key="src">
+                  <div class="preview-item">
+                    <video :src="src" class="preview-image" controls></video>
+                  </div>
+                </template>
+              </div>
+            </td>
           </tr>
         </table>
       </div>
 
-      <!-- 見積もり -->
       <div class="card estimate-card">
         <h2>
           <i class="fa-solid fa-yen-sign"></i> 見積もり
-          <button class="btn title-actions" @click="addOption()">
+          <button type="button" class="btn title-actions" @click="addOption()">
             <i class="fa-regular fa-plus"></i>
             <span>オプション追加</span>
           </button>
@@ -356,71 +364,67 @@
             <th></th>
           </tr>
 
-          <!-- 着付固定項目 -->
           <tr>
             <td>着付</td>
             <td class="clickable-cell">
               <label class="toggle-check">
-                <input type="checkbox" x-model="estimateItems[0].toujitsu">
+                <input type="checkbox" x-model="formData.estimateItems[0].toujitsu">
                 <i class="fa-regular fa-circle-xmark"></i>
                 <i class="fa-regular fa-circle-check"></i>
               </label>
             </td>
             <td class="clickable-cell">
               <label class="toggle-check">
-                <input type="checkbox" x-model="estimateItems[0].maedori">
+                <input type="checkbox" x-model="formData.estimateItems[0].maedori">
                 <i class="fa-regular fa-circle-xmark"></i>
                 <i class="fa-regular fa-circle-check"></i>
               </label>
             </td>
             <td>
-              <!-- カンマ付き円表示 -->
-              <div class="total" x-text="formatYen(calcPrice(estimateItems[0]))"></div>
+              <div class="total" x-text="formatYen(calcPrice(formData.estimateItems[0]))"></div>
             </td>
             <td></td>
           </tr>
 
-          <!-- ヘア項目（振袖のときだけ） -->
           <tr x-show="formData.basic.outfit==='振袖'">
             <td>
-              <select x-model="estimateItems[1].option">
+              <select x-model="formData.estimateItems[1].option">
                 <option value="none">ヘアメイクなし</option>
                 <option value="hairMake">ヘア＆メイク</option>
                 <option value="hairOnly">ヘアのみ</option>
               </select>
             </td>
             <td class="clickable-cell">
-              <template x-if="estimateItems[1].option==='none'">
+              <template x-if="formData.estimateItems[1].option==='none'">
                 <span class="disabled-label">対象外</span>
               </template>
-              <template x-if="estimateItems[1].option!=='none'">
+              <template x-if="formData.estimateItems[1].option!=='none'">
                 <label class="toggle-check">
-                  <input type="checkbox" x-model="estimateItems[1].toujitsu">
+                  <input type="checkbox" x-model="formData.estimateItems[1].toujitsu">
                   <i class="fa-regular fa-circle-xmark"></i>
                   <i class="fa-regular fa-circle-check"></i>
                 </label>
               </template>
             </td>
             <td class="clickable-cell">
-              <template x-if="estimateItems[1].option==='none'">
+              <template x-if="formData.estimateItems[1].option==='none'">
                 <span class="disabled-label">対象外</span>
               </template>
-              <template x-if="estimateItems[1].option!=='none'">
+              <template x-if="formData.estimateItems[1].option!=='none'">
                 <label class="toggle-check">
-                  <input type="checkbox" x-model="estimateItems[1].maedori">
+                  <input type="checkbox" x-model="formData.estimateItems[1].maedori">
                   <i class="fa-regular fa-circle-xmark"></i>
                   <i class="fa-regular fa-circle-check"></i>
                 </label>
               </template>
             </td>
             <td>
-              <div class="total" x-text="formatYen(calcPrice(estimateItems[1]))"></div>
+              <div class="total" x-text="formatYen(calcPrice(formData.estimateItems[1]))"></div>
             </td>
             <td></td>
           </tr>
 
-          <!-- 追加オプション -->
-          <template x-for="(item,i) in estimateItems.slice(2)" :key="i">
+          <template x-for="(item,i) in formData.estimateItems.slice(2)" :key="i">
             <tr>
               <td><input type="text" x-model="item.name"></td>
               <td class="clickable-cell">
@@ -442,14 +446,14 @@
                 <span>円</span>
               </td>
               <td>
-                <button class="btn-del" @click="if(confirm('このオプションを削除しますか？')) estimateItems.splice(i+2,1)">
+                <button type="button" class="btn-del"
+                  @click="if(confirm('このオプションを削除しますか？')) formData.estimateItems.splice(i+2,1)">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </td>
             </tr>
           </template>
 
-          <!-- 合計 -->
           <tr>
             <td colspan="3" style="text-align: center;">合計</td>
             <td class="total" x-text="formatYen(totalAmount)"></td>
@@ -464,18 +468,20 @@
           <tr>
             <th>領収日</th>
             <td>
-              <input id="receiptDate" type="date" x-model="formData.estimate.receiptDate" required>
+              <input id="receiptDate" type="date" x-model="formData.estimate.receiptDate">
             </td>
           </tr>
         </table>
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn register-btn" x-text="currentGroupId ? '更新' : '登録'"></button>
+        <button type="submit" class="btn register-btn" :disabled="isSubmitting"
+          x-text="isSubmitting ? '処理中...' : (currentCustomerId ? '更新' : '登録')"></button>
       </div>
-      <div class="cancellation-status" x-show="currentGroupId != null">
+
+      <div class="cancellation-status" x-show="currentCustomerId">
         <label for="cancellation-toggle">
-          <input type="checkbox" id="cancellation-toggle" x-model="representative.isCanceled">
+          <input type="checkbox" id="cancellation-toggle" x-model="formData.isCanceled">
           <span>キャンセルの時はここにチェックをつける</span>
         </label>
       </div>
