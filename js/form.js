@@ -50,10 +50,10 @@ document.addEventListener('alpine:init', () => {
         lineType: '教室LINE',
         height: '',
         footSize: '',
-        outfit: '振袖',          // "振袖" or "袴"
-        rentalType: '自前',      // "自前" / "レンタル" / "一部レンタル"
-        outfitMemo: '',      // 備考
-        hairMakeStaff: ''          // 振袖のときだけ利用
+        outfit: '振袖', 
+        rentalType: '自前',
+        outfitMemo: '', 
+        hairMakeStaff: ''
       },
       // 当日スケジュール
       toujitsu: {
@@ -71,6 +71,25 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    // --- 初期化 ---
+    async init() {
+      const params = new URLSearchParams(window.location.search);
+      // URLからyearパラメータを取得し、なければ現在の年をデフォルト値にする
+      const yearFromUrl = params.get('year');
+      this.selectedYear = yearFromUrl ? parseInt(yearFromUrl) : new Date().getFullYear();
+
+      const groupId = params.get('group');
+      this.currentGroupId = groupId;
+
+      if (groupId) {
+        // 編集モード：既存データを読み込む
+        await this.loadFormData(groupId);
+      } else {
+        // 新規登録モード：初期データを設定
+        this.updateCustomerList();
+      }
+    },
+
     // ===== 打ち合わせ・お預かり =====
     meetingModalVisible: false,
     meetingForm: { type: '打ち合わせ', date: '', place: '', note: '' },
@@ -81,9 +100,11 @@ document.addEventListener('alpine:init', () => {
       this.meetingEditIndex = null;
       this.meetingModalVisible = true;
     },
+
     closeMeetingModal() {
       this.meetingModalVisible = false;
     },
+
     saveMeeting() {
       if (this.meetingEditIndex !== null) {
         this.formData.meetings[this.meetingEditIndex] = { ...this.meetingForm };
@@ -156,7 +177,6 @@ document.addEventListener('alpine:init', () => {
     },
 
     calcPrice(item) {
-      // 着付け
       if (item.name === "着付け") {
         if (this.formData.basic.outfit === "振袖") {
           if (item.toujitsu && item.maedori) return PRICE.FURISODE.KITSUKE.BOTH;
@@ -166,8 +186,6 @@ document.addEventListener('alpine:init', () => {
           return PRICE.HAKAMA.KITSUKE;
         }
       }
-
-      // ヘア (振袖のみ)
       if (item.name === "ヘア" && this.formData.basic.outfit === "振袖") {
         let unitPrice = 0;
         if (item.option === "hairMake") unitPrice = PRICE.FURISODE.HAIR_MAKE;
@@ -177,7 +195,6 @@ document.addEventListener('alpine:init', () => {
         if (item.maedori) total += unitPrice;
         return total;
       }
-
       return item.price ?? 0;
     },
 
@@ -204,15 +221,14 @@ document.addEventListener('alpine:init', () => {
     },
 
     formatYen(value) {
-      if (!value || isNaN(value)) return "—";  // 0円のとき「—」に
+      if (!value || isNaN(value)) return "—";
       return value.toLocaleString('ja-JP') + "円";
     },
-    
+
     swapSchedule() {
       const arr = this.formData.toujitsu.schedule;
       if (arr.length === 2) {
         [arr[0], arr[1]] = [arr[1], arr[0]];
-        // 念のため再代入で反映保証
         this.formData.toujitsu.schedule = [...arr];
       }
     }

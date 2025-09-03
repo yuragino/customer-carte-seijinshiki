@@ -1,0 +1,203 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+th,
+td {
+  padding: 0.9rem 0;
+  text-align: center;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+th:nth-child(1),
+td:nth-child(1),
+th:nth-child(2),
+td:nth-child(2),
+th:last-child,
+td:last-child {
+  width: 8%;
+}
+
+th:nth-child(7),
+td:nth-child(7) {
+  width: 10%;
+}
+
+th:nth-child(3),
+td:nth-child(3),
+th:nth-child(4),
+td:nth-child(4){
+  width: 12%;
+}
+
+th:nth-child(5),
+td:nth-child(5),
+th:nth-child(6),
+td:nth-child(6) {
+  width: 21%;
+}
+
+thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+select {
+  padding: 0.4rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: #fff;
+  min-width: 80px;
+}
+
+/* Status Button */
+.status-btn {
+  border: none;
+  border-radius: 1rem;
+  padding: 0.4rem 1rem;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* 受付完了 (グレー) */
+.status-received {
+  background-color: #6c757d;
+}
+
+/* 案内完了 (青) */
+.status-guided {
+  background-color: #007bff;
+}
+
+
+/* 着付完了 (緑) */
+.status-dressing-done {
+  background-color: #28a745;
+}
+
+/* 見送り完了 (オレンジ) */
+.status-sent-off {
+  background-color: #fd7e14;
+}
+
+/* 性別ハイライト */
+.gender-male {
+  background-color: #3498db20;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.gender-female {
+  background-color: rgba(233, 30, 98, 0.094);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+td:last-child {
+  position: relative;
+}
+
+.detail-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+
+.detail-link:hover {
+  opacity: 0.8;
+}
+
+.notes-exist-link {
+  color: #ff0022a5;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.booth-radios label,
+.staff-checkboxes label {
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-size: 0.8rem;
+  display: inline-block;
+  margin: 0.2rem;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.booth-radios label:has(input[type="radio"]:checked) {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.staff-checkboxes label:has(input[type="checkbox"]:checked) {
+  background-color: #28a745;
+  color: #fff;
+  border-color: #28a745;
+}
+
+table .is-canceled {
+  background-color: #f8f8f8;
+  /* 薄いグレーの背景 */
+  color: #a0a0a0;
+  /* 文字色を薄くする */
+}
+
+.booth-radios label.disabled,
+.staff-checkboxes label.disabled {
+  opacity: 0.6;
+}
+
+.manual-link {
+  text-align: right;
+  padding: 0 1.2rem 1.2rem 1.2rem ;
+  color: #555;
+}
+.manual-link a {
+  color: #004e92;
+  text-decoration: none;
+}
+.manual-link a:hover {
+  text-decoration: underline;
+}
