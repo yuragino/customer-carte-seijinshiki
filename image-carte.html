@@ -3,9 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>お客様カルテ - トップページ</title>
+  <title>お客様カルテ - 画像一覧</title>
   <!-- Custom Script -->
-  <script type="module" src="./js/top-page.js"></script>
+  <script type="module" src="./js/image-carte.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
   <!-- Styles -->
@@ -13,7 +13,7 @@
     integrity="sha384-...." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="https://unpkg.com/sanitize.css">
   <link rel="stylesheet" href="./css/layout.css">
-  <link rel="stylesheet" href="./css/top-page.css">
+  <link rel="stylesheet" href="./css/image-carte.css">
 </head>
 
 <body x-data="app" x-init="init">
@@ -38,7 +38,57 @@
   </header>
 
   <main>
+    <div class="search-box">
+      <input type="text" placeholder="名前を検索..." x-model="searchQuery" @input="searchCustomers" />
+      <i class="fa fa-search"></i>
+      <ul class="suggestions">
+        <template x-for="suggestion in suggestions" :key="suggestion.id">
+          <li @click="selectCustomer(suggestion)" x-text="suggestion.name"></li>
+        </template>
+      </ul>
+    </div>
 
+    <template x-for="customer in filteredCustomers" :key="customer.id">
+      <div class="accordion">
+        <button @click="toggleAccordion(customer.id)">
+          <span x-text="customer.basic.name"></span>
+          <i class="fa-solid" :class="isOpen(customer.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          <span x-show="(!customer.imageUrls.length && !customer.videoUrls.length)">
+            <i class="fa-solid fa-image-slash"></i>
+          </span>
+        </button>
+
+        <div x-show="isOpen(customer.id)" class="accordion-content">
+
+          <!-- 画像表示 -->
+          <div class="images">
+            <template x-if="customer.imageUrls.length > 0">
+              <template x-for="img in customer.imageUrls" :key="img">
+                <img :src="img" class="preview-img" loading="lazy" />
+              </template>
+            </template>
+            <template x-if="customer.imageUrls.length === 0">
+              <p>画像が登録されていません</p>
+            </template>
+          </div>
+
+          <!-- 動画表示 -->
+          <div class="videos">
+            <template x-if="customer.videoUrls.length > 0">
+              <template x-for="vid in customer.videoUrls" :key="vid">
+                <video controls class="preview-video">
+                  <source :src="vid" type="video/mp4">
+                </video>
+              </template>
+            </template>
+            <template x-if="customer.videoUrls.length === 0">
+              <p>動画が登録されていません</p>
+            </template>
+          </div>
+
+        </div>
+      </div>
+    </template>
   </main>
 
 </body>
