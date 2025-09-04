@@ -178,10 +178,6 @@ textarea:focus {
   transition: background 0.2s;
 }
 
-.btn:hover {
-  background: #1d4ed8;
-}
-
 .btn-del {
   background: none;
   color: #dc2626;
