@@ -14,19 +14,43 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// 文字正規化（スペース無視）
+function normalizeForSearch(str) {
+  if (!str) return "";
+  return str
+    .normalize("NFKC")   // 全角半角を揃える
+    .replace(/\s+/g, "");// スペース削除
+}
+
 document.addEventListener('alpine:init', () => {
   Alpine.data('app', () => ({
     customers: [],
     openAccordions: JSON.parse(localStorage.getItem('openAccordions') || '[]'),
     searchQuery: localStorage.getItem('searchQuery') || "",
-    suggestions: [],
+    selectedYear: new Date().getFullYear(),
+
+    get yearOptions() {
+      const currentYear = new Date().getFullYear();
+      return [currentYear + 1, currentYear, currentYear - 1, currentYear - 2];
+    },
 
     async init() {
-      const snapshot = await getDocs(collection(db, `${new Date().getFullYear()}_seijinshiki`));
+      const params = new URLSearchParams(window.location.search);
+      const yearFromUrl = params.get('year');
+      this.selectedYear = yearFromUrl ? Number(yearFromUrl) : new Date().getFullYear();
+      const snapshot = await getDocs(collection(db, `${this.selectedYear}_seijinshiki`));
       this.customers = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+    },
+
+    changeYear() {
+      const url = new URL(window.location.href);
+      url.searchParams.set("year", this.selectedYear);
+      window.history.pushState({}, "", url);
+      this.init();
     },
 
     isOpen(id) {
@@ -35,46 +59,23 @@ document.addEventListener('alpine:init', () => {
 
     toggleAccordion(id) {
       if (this.isOpen(id)) {
-        this.openAccordions = this.openAccordions.filter(item => item !== id);
+        this.openAccordions = this.openAccordions.filter(x => x !== id);
       } else {
         this.openAccordions.push(id);
       }
-      localStorage.setItem('openAccordions', JSON.stringify(this.openAccordions));
+      localStorage.setItem("openAccordions", JSON.stringify(this.openAccordions));
     },
 
-    // 検索
-    searchCustomers() {
-      const query = this.searchQuery.replace(/\s/g, ""); // スペース無視
-      localStorage.setItem('searchQuery', this.searchQuery);
+    // 随時絞り込み（ひらがな/漢字両対応・スペース無視）
+    get filteredCustomers() {
+      if (!this.searchQuery) return this.customers;
+      const query = normalizeForSearch(this.searchQuery);
 
-      if (!query) {
-        this.suggestions = [];
-        return;
-      }
-      this.suggestions = this.customers.filter(c => {
-        const kana = (c.basic?.kana || "").replace(/\s/g,"");
-        const name = (c.basic?.name || "").replace(/\s/g,"");
+      return this.customers.filter(c => {
+        const kana = normalizeForSearch(c.basic?.kana || ""); // 例: "おおもりあやか"
+        const name = normalizeForSearch(c.basic?.name || ""); // 例: "大森彩加"
         return kana.includes(query) || name.includes(query);
       });
     },
-
-    selectCustomer(customer) {
-      // 該当顧客だけ表示するようフィルタ
-      this.suggestions = [];
-      this.searchQuery = customer.basic.name;
-      localStorage.setItem('searchQuery', this.searchQuery);
-      this.openAccordions = [customer.id]; // その顧客IDだけ開いた状態に
-      localStorage.setItem('openAccordions', JSON.stringify(this.openAccordions));
-    },
-
-    get filteredCustomers() {
-      if (!this.searchQuery) return this.customers;
-      const query = this.searchQuery.replace(/\s/g,"");
-      return this.customers.filter(c => {
-        const kana = (c.basic?.kana || "").replace(/\s/g,"");
-        const name = (c.basic?.name || "").replace(/\s/g,"");
-        return kana === query || name === query;
-      });
-    }
   }));
 });

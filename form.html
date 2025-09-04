@@ -53,11 +53,11 @@
           </tr>
           <tr>
             <th>名前</th>
-            <td><input type="text" placeholder="山田 花子" x-model="formData.basic.name" id="name" required></td>
+            <td><input type="text" placeholder="山田花子" x-model="formData.basic.name" id="name" required></td>
           </tr>
           <tr>
-            <th>フリガナ</th>
-            <td><input type="text" placeholder="ヤマダ ハナコ" x-model="formData.basic.kana" id="furigana"></td>
+            <th>ふりがな</th>
+            <td><input type="text" placeholder="やまだはなこ" x-model="formData.basic.kana" id="furigana"></td>
           </tr>
           <tr>
             <th>紹介者</th>
@@ -490,7 +490,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      AutoKana.bind('#name', '#furigana', { katakana: true });
+      AutoKana.bind('#name', '#furigana', { katakana: false });
     });
   </script>
 </body>

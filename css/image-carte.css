@@ -1,111 +1,100 @@
+/* === 検索欄 === */
 .search-box {
-  position: relative;
-  width: 300px;
+  display: flex;
+  align-items: center;
+  margin: 1.5rem auto;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 25px;
+  padding: 0.3rem 0.6rem;
+  background: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-input[type="text"] {
-  width: 100%;
-  padding: 0.5rem 2rem 0.5rem 0.8rem;
-  border-radius: 4px;
+.search-box input[type="text"] {
+  flex: 1;
   border: none;
   outline: none;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.95rem;
+  background: transparent;
 }
 
-i.fa-search {
-  position: absolute;
-  right: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #888;
-  pointer-events: none;
-}
-
-.suggestions {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  z-index: 10;
-  border-radius: 0 0 4px 4px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.suggestions li {
-  padding: 0.6rem 0.8rem;
-  cursor: pointer;
-}
-
-.suggestions li:hover {
-  background: #f2f2f2;
-}
-
-/* ===== アコーディオン ===== */
+/* === アコーディオン === */
 .accordion {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .accordion button {
   width: 100%;
-  text-align: left;
-  padding: 1rem;
   background: #fff;
   border: none;
-  font-size: 1.1rem;
+  padding: 1rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  /* 名称＋アイコン左、矢印右 */
+  align-items: center;
   cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: left;
 }
 
 .accordion button:hover {
   background: #f9f9f9;
 }
 
-.accordion button i {
+/* 左側テキストと「写真なし」アイコン */
+.accordion-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.no-media-icon,
+.accordion button i.fa-image-slash {
+  color: #bbb;
+  font-size: 0.9rem;
+}
+
+/* ▼ / ▲ チェブロン */
+.accordion button .chevron {
+  font-size: 0.9rem;
   margin-left: auto;
-  transition: transform 0.3s;
+  color: #666;
 }
 
-.accordion button[aria-expanded="true"] i {
-  transform: rotate(180deg);
-}
-
-/* ===== アコーディオンの内容 ===== */
+/* === アコーディオン内容 === */
 .accordion-content {
-  background: #fdfdfd;
-  padding: 1rem 1.2rem;
+  background: #fafafa;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-/* ===== 写真表示 ===== */
+/* === 画像 === */
 .images {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 1rem;
 }
 
 .preview-img {
   width: 100%;
-  height: auto;
   border-radius: 6px;
   object-fit: cover;
   border: 1px solid #ddd;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .preview-img:hover {
-  transform: scale(1.03);
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== 動画表示 ===== */
+/* === 動画 === */
 .videos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -114,21 +103,21 @@ i.fa-search {
 
 .preview-video {
   width: 100%;
-  max-height: 200px;
   border-radius: 6px;
   border: 1px solid #ddd;
+  max-height: 220px;
 }
 
-/* ===== "画像なし / 動画なし" メッセージ ===== */
+/* === 空データ表示 === */
 .accordion-content p {
-  color: #777;
+  color: #888;
   font-style: italic;
-  margin: 0.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin: 0;
 }
 
-.accordion-content p i {
-  color: #bbb;
+/* === レイアウト調整（iPad対応） === */
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
 }

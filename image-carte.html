@@ -10,7 +10,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
   <!-- Styles -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    integrity="sha384-...." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    crossorigin="anonymous" />
   <link rel="stylesheet" href="https://unpkg.com/sanitize.css">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/image-carte.css">
@@ -38,50 +38,46 @@
   </header>
 
   <main>
+    <!-- 検索ボックス -->
     <div class="search-box">
-      <input type="text" placeholder="名前を検索..." x-model="searchQuery" @input="searchCustomers" />
+      <input type="text" placeholder="名前を入力してください" x-model="searchQuery" />
       <i class="fa fa-search"></i>
-      <ul class="suggestions">
-        <template x-for="suggestion in suggestions" :key="suggestion.id">
-          <li @click="selectCustomer(suggestion)" x-text="suggestion.name"></li>
-        </template>
-      </ul>
     </div>
 
+    <!-- 顧客アコーディオン -->
     <template x-for="customer in filteredCustomers" :key="customer.id">
       <div class="accordion">
         <button @click="toggleAccordion(customer.id)">
-          <span x-text="customer.basic.name"></span>
-          <i class="fa-solid" :class="isOpen(customer.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-          <span x-show="(!customer.imageUrls.length && !customer.videoUrls.length)">
-            <i class="fa-solid fa-image-slash"></i>
-          </span>
+          <div class="accordion-text">
+            <span x-text="customer.basic.name"></span>
+          </div>
+          <i class="fa-solid chevron" :class="isOpen(customer.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
 
         <div x-show="isOpen(customer.id)" class="accordion-content">
 
           <!-- 画像表示 -->
           <div class="images">
-            <template x-if="customer.imageUrls.length > 0">
+            <template x-if="customer.imageUrls?.length > 0">
               <template x-for="img in customer.imageUrls" :key="img">
                 <img :src="img" class="preview-img" loading="lazy" />
               </template>
             </template>
-            <template x-if="customer.imageUrls.length === 0">
+            <template x-if="!customer.imageUrls?.length">
               <p>画像が登録されていません</p>
             </template>
           </div>
 
           <!-- 動画表示 -->
           <div class="videos">
-            <template x-if="customer.videoUrls.length > 0">
+            <template x-if="customer.videoUrls?.length > 0">
               <template x-for="vid in customer.videoUrls" :key="vid">
                 <video controls class="preview-video">
                   <source :src="vid" type="video/mp4">
                 </video>
               </template>
             </template>
-            <template x-if="customer.videoUrls.length === 0">
+            <template x-if="!customer.videoUrls?.length">
               <p>動画が登録されていません</p>
             </template>
           </div>
@@ -90,7 +86,6 @@
       </div>
     </template>
   </main>
-
 </body>
 
 </html>
