@@ -21,6 +21,10 @@ h2 {
   margin-left: auto;
 }
 
+.title-actions a{
+  font-size: 18px;
+}
+
 /* ===== カード ===== */
 .card {
   background: white;

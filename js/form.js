@@ -99,6 +99,11 @@ document.addEventListener('alpine:init', () => {
       this.isSubmitting = true;
 
       try {
+        this.formData.estimateItems.forEach(item => {
+          if (item.name === "着付け" || item.name === "ヘア") {
+            item.price = this.calcPrice(item);
+          }
+        });
         const folderName = `${this.selectedYear}_seijinshiki`;
         const tags = [this.formData.basic.name]; // タグとしてお客様の名前を使用
 
@@ -201,7 +206,7 @@ document.addEventListener('alpine:init', () => {
     },
     calcPrice(item) {
       const outfit = this.formData.basic.outfit;
-      if (item.name === "着付け") {
+      if (item.name === "着付") {
         if (outfit === "振袖") {
           if (item.toujitsu && item.maedori) return PRICE.FURISODE.KITSUKE.BOTH;
           if (item.toujitsu) return PRICE.FURISODE.KITSUKE.TOUJITSU;
@@ -314,7 +319,7 @@ function createInitialFormData() {
     },
     // 見積もり情報
     estimateItems: [
-      { name: "着付け", fixed: true, toujitsu: true, maedori: false },
+      { name: "着付", fixed: true, toujitsu: true, maedori: false },
       { name: "ヘア", fixed: true, toujitsu: true, maedori: false, option: "hairMake" }
     ],
     estimate: { receiptDate: '' },
