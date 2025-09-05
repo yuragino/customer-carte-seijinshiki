@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener('alpine:init', () => {
-  Alpine.data('schedulePage', () => ({
+  Alpine.data('app', () => ({
     customers: [],
     isLoading: true,
     boothOptionsFemale: ['A1', 'A2', 'B1', 'B2'],

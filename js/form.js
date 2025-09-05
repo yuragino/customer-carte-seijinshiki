@@ -100,7 +100,7 @@ document.addEventListener('alpine:init', () => {
 
       try {
         this.formData.estimateItems.forEach(item => {
-          if (item.name === "着付け" || item.name === "ヘア") {
+          if (item.name === "着付" || item.name === "ヘア") {
             item.price = this.calcPrice(item);
           }
         });
