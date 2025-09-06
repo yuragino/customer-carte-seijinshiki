@@ -45,7 +45,7 @@
         <h2>
           <i class="fa-regular fa-circle-user"></i>
           <span>基本情報</span>
-          <div class="title-actions">
+          <div class="title-actions" x-show="currentCustomerId">
             <a :href="`print.html?year=${selectedYear}&customer=${currentCustomerId}`" target="_blank">印刷用ページ</a>
           </div>
         </h2>
