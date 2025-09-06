@@ -100,8 +100,19 @@ document.addEventListener('alpine:init', () => {
 
       try {
         this.formData.estimateItems.forEach(item => {
-          if (item.name === "着付" || item.name === "ヘア") {
+          if (item.name === "着付") {
             item.price = this.calcPrice(item);
+          }
+          if (item.name === "ヘア") {
+            item.price = this.calcPrice(item);
+            if (item.option === "hairMake") {
+              item.name = "ヘア&メイク";
+            } else if (item.option === "hairOnly") {
+              item.name = "ヘアのみ";
+            } else {
+              item.name = "ヘア&メイクなし"; // オプションがない場合
+              item.price = 0; // 金額も0に
+            }
           }
         });
         const folderName = `${this.selectedYear}_seijinshiki`;
@@ -216,13 +227,15 @@ document.addEventListener('alpine:init', () => {
         }
       }
       if (item.name === "ヘア" && outfit === "振袖") {
-        let unitPrice = 0;
-        if (item.option === "hairMake") unitPrice = PRICE.FURISODE.HAIR_MAKE;
-        if (item.option === "hairOnly") unitPrice = PRICE.FURISODE.HAIR_ONLY;
-        let total = 0;
-        if (item.toujitsu) total += unitPrice;
-        if (item.maedori) total += unitPrice;
-        return total;
+        if (item.option === "hairMake") {
+          if (item.toujitsu && item.maedori) return PRICE.FURISODE.HAIR_MAKE*2;
+          if (item.toujitsu) return PRICE.FURISODE.HAIR_MAKE;
+          if (item.maedori) return PRICE.FURISODE.HAIR_MAKE;
+        } else if (item.option === "hairOnly") {
+          if (item.toujitsu && item.maedori) return PRICE.FURISODE.HAIR_ONLY*2;
+          if (item.toujitsu) return PRICE.FURISODE.HAIR_ONLY;
+          if (item.maedori) return PRICE.FURISODE.HAIR_ONLY;
+        }
       }
       return (item.toujitsu || item.maedori) ? (item.price || 0) : 0;
     },
